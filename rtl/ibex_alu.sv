@@ -45,10 +45,11 @@ module ibex_alu #(
   // Adder //
   ///////////
 
-  logic        adder_op_a_shift1;
-  logic        adder_op_a_shift2;
-  logic        adder_op_a_shift3;
-  logic        adder_op_b_negate;
+   logic        adder_op_a_shift1;
+   logic       adder_op_a_shift2;
+   logic       adder_op_a_shift3;
+   logic       adder_op_b_negate;
+   logic       cust_cntrl;
   logic [32:0] adder_in_a, adder_in_b;
   logic [31:0] adder_result;
 
@@ -57,6 +58,8 @@ module ibex_alu #(
     adder_op_a_shift2 = 1'b0;
     adder_op_a_shift3 = 1'b0;
     adder_op_b_negate = 1'b0;
+     cust_cntrl = 1'b0;
+     
     unique case (operator_i)
       // Adder OPs
       ALU_SUB,
@@ -76,17 +79,26 @@ module ibex_alu #(
       ALU_SH2ADD: if (RV32B != RV32BNone) adder_op_a_shift2 = 1'b1;
       ALU_SH3ADD: if (RV32B != RV32BNone) adder_op_a_shift3 = 1'b1;
 
+      //custom instr
+      ALU_CUST: cust_cntrl = 1'b1;
+      
+
       default:;
     endcase
   end
 
   // prepare operand a
+   logic [31:0] cust_a;
+   assign cust_a = operand_a_i * operand_a_i;
+   
   always_comb begin
     unique case (1'b1)
       multdiv_sel_i:     adder_in_a = multdiv_operand_a_i;
       adder_op_a_shift1: adder_in_a = {operand_a_i[30:0],2'b01};
       adder_op_a_shift2: adder_in_a = {operand_a_i[29:0],3'b001};
       adder_op_a_shift3: adder_in_a = {operand_a_i[28:0],4'b0001};
+      cust_cntrl: adder_in_a = {cust_a, 1'b1};
+      
       default:           adder_in_a = {operand_a_i,1'b1};
     endcase
   end
@@ -1326,7 +1338,7 @@ module ibex_alu #(
       ALU_AND,  ALU_ANDN: result_o = bwlogic_result;
 
       // Adder Operations
-      ALU_ADD,  ALU_SUB,
+      ALU_ADD,  ALU_SUB, ALU_CUST,
       // RV32B
       ALU_SH1ADD, ALU_SH2ADD,
       ALU_SH3ADD: result_o = adder_result;
