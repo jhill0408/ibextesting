@@ -89,6 +89,7 @@ module ibex_core import ibex_pkg::*; #(
   output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
+  output logic msg_en,
 
   // RAMs interface
   output logic [IC_NUM_WAYS-1:0]       ic_tag_req_o,
@@ -614,6 +615,8 @@ module ibex_core import ibex_pkg::*; #(
     .multdiv_operand_a_ex_o  (multdiv_operand_a_ex),
     .multdiv_operand_b_ex_o  (multdiv_operand_b_ex),
     .multdiv_ready_id_o      (multdiv_ready_id),
+
+    .msg_en(msg_en),
 
     // CSR ID/EX
     .csr_access_o         (csr_access),

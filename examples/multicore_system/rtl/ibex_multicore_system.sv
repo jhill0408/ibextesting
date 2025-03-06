@@ -71,6 +71,13 @@ module ibex_multicore_system (
   localparam int NrDevices = 4;
   localparam int NrHosts = 2;
 
+  logic valid01;
+  logic valid10;
+  logic [31:0] data01;
+  logic [31:0] data10;
+  logic [4:0] addr01;
+  logic [4:0] addr10;
+
   // interrupts
   logic timer_irq;
 
@@ -215,6 +222,21 @@ module ibex_multicore_system (
     assign instr_rdata_intg2 = '0;
   end
 
+  always @(posedge clk_sys) begin
+ 
+  if (valid10 == 1) begin
+    $display("yay");
+    $display("valid10 is %d", valid10);
+    $display("data10 is %d", data10);
+    $display("addr10 is %d", addr10);
+  end
+  if (valid01 ==  1) begin
+    $display("yay1");
+  end
+
+end
+
+
   ibex_top_tracing #(
       .SecureIbex      ( SecureIbex       ),
       .ICacheScramble  ( ICacheScramble   ),
@@ -268,6 +290,12 @@ module ibex_multicore_system (
       .data_rdata_i           (host_rdata[CoreD]),
       .data_rdata_intg_i      (data_rdata_intg1),
       .data_err_i             (host_err[CoreD]),
+      .input_valid(valid10),
+      .input_addr(addr10),
+      .input_data(data10),
+      .output_valid(valid01),
+      .output_data(data01),
+      .output_addr(addr01),
 
       .irq_software_i         (1'b0),
       .irq_timer_i            (timer_irq),
@@ -344,6 +372,13 @@ module ibex_multicore_system (
       .data_rdata_i           (host_rdata[CoreE]),
       .data_rdata_intg_i      (data_rdata_intg2),
       .data_err_i             (host_err[CoreE]),
+
+      .input_valid(valid01),
+      .input_addr(addr01),
+      .input_data(data01),
+      .output_valid(valid10),
+      .output_data(data10),
+      .output_addr(addr10),
 
       .irq_software_i         (1'b0),
       .irq_timer_i            (timer_irq),

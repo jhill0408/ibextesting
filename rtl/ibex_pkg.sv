@@ -68,7 +68,8 @@ package ibex_pkg;
     OPCODE_JALR     = 7'h67,
     OPCODE_JAL      = 7'h6f,
     OPCODE_SYSTEM   = 7'h73,
-    OPCODE_CUST     = 7'h0B	
+    OPCODE_CUST     = 7'h0B,
+    OPCODE_MSG      = 7'h2B	
   } opcode_e;
 
 
@@ -232,7 +233,8 @@ package ibex_pkg;
   typedef enum logic[1:0] {
     WB_INSTR_LOAD,  // Instruction is awaiting load data
     WB_INSTR_STORE, // Instruction is awaiting store response
-    WB_INSTR_OTHER  // Instruction doesn't fit into above categories
+    WB_INSTR_OTHER,  // Instruction doesn't fit into above categories
+    WB_INSTR_MSG
   } wb_instr_type_e;
 
   //////////////

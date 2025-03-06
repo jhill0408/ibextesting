@@ -94,7 +94,10 @@ module ibex_decoder #(
 
   // jump/branches
   output logic                 jump_in_dec_o,         // jump is being calculated in ALU
-  output logic                 branch_in_dec_o
+  output logic                 branch_in_dec_o,
+
+  // custom msg instr
+  output logic  msg_en  
 );
 
   import ibex_pkg::*;
@@ -232,6 +235,8 @@ module ibex_decoder #(
     ecall_insn_o          = 1'b0;
     wfi_insn_o            = 1'b0;
 
+    msg_en                = 1'b0;
+
     opcode                = opcode_e'(instr[6:0]);
 
     unique case (opcode)
@@ -309,6 +314,15 @@ module ibex_decoder #(
           2'b10:   data_type_o  = 2'b00; // sw
           default: illegal_insn = 1'b1;
         endcase
+      end
+
+      OPCODE_MSG: begin
+        rf_ren_a_o         = 1'b1;
+        rf_ren_b_o         = 1'b1;
+        data_req_o         = 1'b0; // prolly not need data access
+        data_we_o          = 1'b0; // prolly dont need to write to memory
+        msg_en             = 1'b1;
+        data_type_o = 2'b00;
       end
 
       OPCODE_LOAD: begin
@@ -792,6 +806,13 @@ module ibex_decoder #(
           imm_b_mux_sel_o     = IMM_B_S;
           alu_op_b_mux_sel_o  = OP_B_IMM;
         end
+      end
+
+      OPCODE_MSG: begin
+        alu_op_a_mux_sel_o = OP_A_REG_A;
+        alu_op_b_mux_sel_o = OP_B_REG_B;
+        alu_operator_o     = ALU_ADD;
+
       end
 
       OPCODE_LOAD: begin

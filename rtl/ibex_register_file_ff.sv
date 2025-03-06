@@ -41,7 +41,11 @@ module ibex_register_file_ff #(
   input  logic                 we_a_i,
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
-  output logic                 err_o
+  output logic                 err_o,
+
+  input logic input_valid,
+  input logic [31:0] input_data,
+  input logic [4:0] input_addr
 );
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
@@ -49,6 +53,7 @@ module ibex_register_file_ff #(
 
   logic [DataWidth-1:0] rf_reg   [NUM_WORDS];
   logic [NUM_WORDS-1:0] we_a_dec;
+  logic [NUM_WORDS-1:0] in_valid_dec;
 
   logic oh_raddr_a_err, oh_raddr_b_err, oh_we_err;
 
@@ -57,6 +62,17 @@ module ibex_register_file_ff #(
       we_a_dec[i] = (waddr_a_i == 5'(i)) ? we_a_i : 1'b0;
     end
   end
+
+  always_comb begin : in_valid_decoder
+    for (int unsigned i = 0; i < NUM_WORDS; i++) begin
+      in_valid_dec[i] = (input_addr == 5'(i)) ? input_valid : 1'b0;
+    end
+  end
+
+/* verilator lint_off UNUSEDSIGNAL */
+  logic useless;
+  assign useless = in_valid_dec[0];
+  /* verilator lint_on UNUSEDSIGNAL */
 
   // SEC_CM: DATA_REG_SW.GLITCH_DETECT
   // This checks for spurious WE strobes on the regfile.
@@ -98,6 +114,8 @@ module ibex_register_file_ff #(
         rf_reg_q <= WordZeroVal;
       end else if (we_a_dec[i]) begin
         rf_reg_q <= wdata_a_i;
+      end else if (in_valid_dec[i]) begin
+        rf_reg_q <= input_data;
       end
     end
 

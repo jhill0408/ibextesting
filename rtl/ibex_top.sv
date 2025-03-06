@@ -77,6 +77,14 @@ module ibex_top import ibex_pkg::*; #(
   input  logic [6:0]                   data_rdata_intg_i,
   input  logic                         data_err_i,
 
+  // custom message signals
+  output logic output_valid,
+  output logic [31:0] output_data,
+  output logic [4:0] output_addr,
+  input logic input_valid,
+  input logic [31:0] input_data,
+  input logic [4:0] input_addr,
+
   // Interrupt inputs
   input  logic                         irq_software_i,
   input  logic                         irq_timer_i,
@@ -178,6 +186,9 @@ module ibex_top import ibex_pkg::*; #(
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc, rf_rdata_a_ecc_buf;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc, rf_rdata_b_ecc_buf;
+
+  logic msg_en;
+  //logic msg_en_r;
 
   // Combined data and integrity for data and instruction busses
   logic [MemDataWidth-1:0]     data_wdata_core;
@@ -284,6 +295,14 @@ module ibex_top import ibex_pkg::*; #(
     assign unused_intg = ^{instr_rdata_intg_i, data_rdata_intg_i};
   end
 
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+    //  msg_en_r <= 1'b0;
+   end else begin
+   // msg_en_r <= msg_en;
+   end
+  end
+
   ibex_core #(
     .PMPEnable        (PMPEnable),
     .PMPGranularity   (PMPGranularity),
@@ -352,6 +371,7 @@ module ibex_top import ibex_pkg::*; #(
     .rf_wdata_wb_ecc_o(rf_wdata_wb_ecc),
     .rf_rdata_a_ecc_i (rf_rdata_a_ecc_buf),
     .rf_rdata_b_ecc_i (rf_rdata_b_ecc_buf),
+    .msg_en(msg_en),
 
     .ic_tag_req_o      (ic_tag_req),
     .ic_tag_write_o    (ic_tag_write),
@@ -451,7 +471,11 @@ module ibex_top import ibex_pkg::*; #(
       .waddr_a_i(rf_waddr_wb),
       .wdata_a_i(rf_wdata_wb_ecc),
       .we_a_i   (rf_we_wb),
-      .err_o    (rf_alert_major_internal)
+      .err_o    (rf_alert_major_internal),
+
+      .input_addr(input_addr),
+      .input_valid(input_valid),
+      .input_data(input_data)
     );
   end else if (RegFile == RegFileFPGA) begin : gen_regfile_fpga
     ibex_register_file_fpga #(
@@ -506,6 +530,14 @@ module ibex_top import ibex_pkg::*; #(
       .err_o    (rf_alert_major_internal)
     );
   end
+
+
+
+
+  assign output_data = rf_rdata_a_ecc;
+  //assign output_valid = msg_en_r;
+  assign output_valid = msg_en;
+  assign output_addr = rf_rdata_b_ecc[4:0];
 
   ///////////////////////////////
   // Scrambling Infrastructure //
