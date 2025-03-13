@@ -53,7 +53,7 @@ module ibex_multicore_system (
   parameter bit                 ICacheECC                = 1'b0;
   parameter bit                 BranchPredictor          = 1'b0;
   parameter                     SRAMInitFile             = "";
-  parameter int unsigned        CPUCount                 = 4;
+  parameter int unsigned        CPUCount                 = 2;
 
   logic clk_sys = 1'b0, rst_sys_n;
 
@@ -138,8 +138,8 @@ module ibex_multicore_system (
   // Device address mapping
   logic [31:0] cfg_device_addr_base [NrDevices];
   logic [31:0] cfg_device_addr_mask [NrDevices];
-  assign cfg_device_addr_base[Ram] = 32'h1000000;
-  assign cfg_device_addr_mask[Ram] = ~32'hFFFFFF; // 16 MB
+  assign cfg_device_addr_base[Ram] = 32'h100000;
+  assign cfg_device_addr_mask[Ram] = ~32'hFFFFF; // 1 MB
   //assign cfg_device_addr_base[Ram2] = 32'h300000;
   //assign cfg_device_addr_mask[Ram2] = ~32'hFFFFF; // 1 MB
   assign cfg_device_addr_base[SimCtrl] = 32'h20000;
@@ -350,10 +350,13 @@ generate
       .WritebackStage  ( WritebackStage   ),
       .BranchPredictor ( BranchPredictor  ),
       .DbgTriggerEn    ( DbgTriggerEn     ),
-      .DmBaseAddr      ( 32'h001000000 + ((32'hFFFFFF)/NrHosts)*i  ), //
+      .DmBaseAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
+      //.DmBaseAddr(32'h00100000),
       .DmAddrMask      ( 32'h00000003     ),
-      .DmHaltAddr      ( 32'h001000000 + ((32'hFFFFFF)/NrHosts)*i  ), //
-      .DmExceptionAddr ( 32'h001000000 + ((32'hFFFFFF)/NrHosts)*i  ) //
+      .DmHaltAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
+      //.DmHaltAddr(32'h00100000),
+      .DmExceptionAddr ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ) //
+      //.DmExceptionAddr(32'h00100000)
     ) u_top (
       .clk_i                  (clk_sys),
       .rst_ni                 (rst_sys_n),
@@ -364,7 +367,8 @@ generate
 
       .hart_id_i              (i),
       // First instruction executed is at 0x0 + 0x80
-      .boot_addr_i            (32'h001000000 + ((32'hFFFFFF)/NrHosts)*i), //
+      .boot_addr_i            (32'h00100000 + (((32'hFFFFF) + 1)/NrHosts)*i), // technically includes 200000, one bad addr
+      //.boot_addr_i(32'h00100000),
 
       .instr_req_o            (instr_req[i]),
       .instr_gnt_i            (instr_gnt[i]),

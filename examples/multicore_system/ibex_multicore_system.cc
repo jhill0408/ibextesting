@@ -13,9 +13,8 @@
 #include "verilator_memutil.h"
 #include "verilator_sim_ctrl.h"
 
-MulticoreSystem::MulticoreSystem(const char *ram1_hier_path, int ram1_size_words, const char *ram2_hier_path, int ram2_size_words )
-    : _ram1(ram1_hier_path, ram1_size_words, 4),
-      _ram2(ram2_hier_path, ram2_size_words, 4) {}
+MulticoreSystem::MulticoreSystem(const char *ram_hier_path, int ram_size_words)
+    : _ram(ram_hier_path, ram_size_words, 4) {}
 
 int MulticoreSystem::Main(int argc, char **argv) {
   bool exit_app;
@@ -74,13 +73,7 @@ int MulticoreSystem::Setup(int argc, char **argv, bool &exit_app) {
                  VerilatorSimCtrlFlags::ResetPolarityNegative);
 
 
-  std::cout << "RAM1" << std::endl;
-  _memutil.RegisterMemoryArea("ram1", 0x00100000, &_ram1);
-  std::cout << "RAM2" << std::endl;
-  std::cout << _ram1.GetSizeBytes() << std::endl;
-  std::cout << _ram2.GetSizeBytes() << std::endl;
-  _memutil.RegisterMemoryArea("ram2", 0x00300000, &_ram2);
-  std::cout << "numba3" << std::endl;
+  _memutil.RegisterMemoryArea("ram", 0x00100000, &_ram);
   simctrl.RegisterExtension(&_memutil);
 
   exit_app = false;

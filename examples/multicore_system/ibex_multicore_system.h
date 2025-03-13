@@ -7,7 +7,7 @@
 
 class MulticoreSystem {
  public:
-  MulticoreSystem(const char *ram1_hier_path, int ram1_size_words, const char *ram2_hier_path, int ram2_size_words);
+  MulticoreSystem(const char *ram_hier_path, int ram_size_words);
   virtual ~MulticoreSystem() {}
   virtual int Main(int argc, char **argv);
 
@@ -18,8 +18,7 @@ class MulticoreSystem {
  protected:
   ibex_multicore_system _top;
   VerilatorMemUtil _memutil;
-  MemArea _ram1;
-  MemArea _ram2;
+  MemArea _ram;
 
   virtual int Setup(int argc, char **argv, bool &exit_app);
   virtual void Run();

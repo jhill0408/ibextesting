@@ -6,8 +6,8 @@
 
 int main(int argc, char **argv) {
   MulticoreSystem multicore_system(
-      "TOP.ibex_multicore_system.u_ram1.u_ram.gen_generic.u_impl_generic", //will need to change this likely, add 2 rams
-      1024 * 1024 / 4, "TOP.ibex_multicore_system.u_ram2.u_ram.gen_generic.u_impl_generic", 1024*1024 / 4);
+      "TOP.ibex_multicore_system.u_ram.u_ram.gen_generic.u_impl_generic", //will need to change this likely, add 2 rams
+      1024 * 1024); // may need to divide by 4 and multiply by 16 if increasing size
 
   return multicore_system.Main(argc, argv);
 }
