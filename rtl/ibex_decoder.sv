@@ -97,7 +97,9 @@ module ibex_decoder #(
   output logic                 branch_in_dec_o,
 
   // custom msg instr
-  output logic  msg_en  
+  output logic  msg_en,  
+  output logic [1:0] len_o,
+  output logic mem_or_reg
 );
 
   import ibex_pkg::*;
@@ -236,6 +238,8 @@ module ibex_decoder #(
     wfi_insn_o            = 1'b0;
 
     msg_en                = 1'b0;
+    len_o                   = instr[13:12];
+    mem_or_reg            = instr[14];
 
     opcode                = opcode_e'(instr[6:0]);
 

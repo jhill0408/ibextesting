@@ -68,11 +68,20 @@ module ibex_top_tracing import ibex_pkg::*; #(
 
   // Custom memory signals
   output logic output_valid,
+  output logic [1:0] len_o,
   output logic [31:0] output_data,
   output logic [4:0] output_addr,
+  output logic [31:0] msg1_data,
+  output logic [31:0] msg2_data,
+  output logic [31:0] msg3_data,
   input logic input_valid,
   input logic [31:0] input_data,
   input logic [4:0] input_addr,
+  input logic [1:0] len_i,
+  input logic [31:0] msg1_data_i,
+  input logic [31:0] msg2_data_i,
+  input logic [31:0] msg3_data_i,
+
 
   // Interrupt inputs
   input  logic                         irq_software_i,
@@ -232,9 +241,17 @@ module ibex_top_tracing import ibex_pkg::*; #(
     .output_addr,
     .output_data,
     .output_valid,
+    .len_o,
+    .msg1_data,
+    .msg2_data,
+    .msg3_data,
     .input_addr,
     .input_data,
     .input_valid,
+    .len_i,
+    .msg1_data_i,
+    .msg2_data_i,
+    .msg3_data_i,
 
     .irq_software_i,
     .irq_timer_i,

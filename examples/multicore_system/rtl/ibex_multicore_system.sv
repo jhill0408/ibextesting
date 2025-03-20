@@ -88,6 +88,15 @@ module ibex_multicore_system (
   logic [NrHosts-1:0] [31:0] data_o;
   logic [NrHosts-1:0] [4:0] addr_i;
   logic [NrHosts-1:0] [4:0] addr_o;
+  logic [NrHosts-1:0] [1:0] len_i;
+  logic [NrHosts-1:0] [1:0] len_o;
+  logic [NrHosts-1:0] [31:0] msg1_data;
+  logic [NrHosts-1:0] [31:0] msg2_data;
+  logic [NrHosts-1:0] [31:0] msg3_data;
+  logic [NrHosts-1:0] [31:0] msg1_data_i;
+  logic [NrHosts-1:0] [31:0] msg2_data_i;
+  logic [NrHosts-1:0] [31:0] msg3_data_i;
+
   /* verilator lint_on UNUSEDSIGNAL */
   /* verilator lint_on UNDRIVEN */
 
@@ -396,6 +405,14 @@ generate
       .output_valid(valid_o[i]),
       .output_data(data_o[i]),
       .output_addr(addr_o[i]),
+      .len_i(len_i[i]),
+      .len_o(len_o[i]),
+      .msg1_data(msg1_data[i]),
+      .msg2_data(msg2_data[i]),
+      .msg3_data(msg3_data[i]),
+      .msg1_data_i(msg1_data_i[i]),
+      .msg2_data_i(msg2_data_i[i]),
+      .msg3_data_i(msg3_data_i[i]),
 
       .irq_software_i         (1'b0),
       .irq_timer_i            (timer_irq),

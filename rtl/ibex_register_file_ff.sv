@@ -30,6 +30,10 @@ module ibex_register_file_ff #(
   input  logic [4:0]           raddr_a_i,
   output logic [DataWidth-1:0] rdata_a_o,
 
+  output logic [DataWidth-1:0] rdata_msg1_o,
+  output logic [DataWidth-1:0] rdata_msg2_o,
+  output logic [DataWidth-1:0] rdata_msg3_o,
+
   //Read port R2
   input  logic [4:0]           raddr_b_i,
   output logic [DataWidth-1:0] rdata_b_o,
@@ -44,6 +48,10 @@ module ibex_register_file_ff #(
   output logic                 err_o,
 
   input logic input_valid,
+  input logic [1:0] len_i,
+  input logic [31:0] input_msg1,
+  input logic [31:0] input_msg2,
+  input logic [31:0] input_msg3,
   input logic [31:0] input_data,
   input logic [4:0] input_addr
 );
@@ -68,6 +76,7 @@ module ibex_register_file_ff #(
       in_valid_dec[i] = (input_addr == 5'(i)) ? input_valid : 1'b0;
     end
   end
+
 
 /* verilator lint_off UNUSEDSIGNAL */
   logic useless;
@@ -114,8 +123,32 @@ module ibex_register_file_ff #(
         rf_reg_q <= WordZeroVal;
       end else if (we_a_dec[i]) begin
         rf_reg_q <= wdata_a_i;
-      end else if (in_valid_dec[i]) begin
-        rf_reg_q <= input_data;
+  //    end else if (in_valid_dec[i]) begin
+    //    rf_reg_q <= input_data;
+      end else begin
+        if (in_valid_dec[i]) begin //prolly better to put this in case maybe
+          rf_reg_q <= input_data;
+        end
+        unique case (len_i) // no need for 00?
+        2'b01: begin
+          if (in_valid_dec[i-1]) begin
+            rf_reg_q <= input_msg1;
+          end
+        end
+        2'b10: begin
+          if (in_valid_dec[i-2]) begin
+            rf_reg_q <= input_msg2;
+          end
+        end
+        2'b11: begin
+          if (in_valid_dec[i-3]) begin
+            rf_reg_q <= input_msg3;
+          end
+        end
+        default: begin
+        end
+        endcase
+
       end
     end
 
@@ -155,6 +188,12 @@ module ibex_register_file_ff #(
     // Encode raddr_a/b into one-hot encoded signals.
     logic [NUM_WORDS-1:0] raddr_onehot_a, raddr_onehot_b;
     logic [NUM_WORDS-1:0] raddr_onehot_a_buf, raddr_onehot_b_buf;
+    logic [NUM_WORDS-1:0] raddr_msg1_onehot, raddr_msg2_onehot, raddr_msg3_onehot;
+
+    assign raddr_msg1_onehot = {raddr_onehot_a[NUM_WORDS-2:1], raddr_onehot_a[NUM_WORDS-1]};
+    assign raddr_msg2_onehot = {raddr_msg1_onehot[NUM_WORDS-2:1], raddr_msg1_onehot[NUM_WORDS-1]};
+    assign raddr_msg3_onehot = {raddr_msg2_onehot[NUM_WORDS-2:1], raddr_msg2_onehot[NUM_WORDS-1]};
+    
     prim_onehot_enc #(
       .OneHotWidth(NUM_WORDS)
     ) u_prim_onehot_enc_raddr_a (
@@ -236,6 +275,39 @@ module ibex_register_file_ff #(
     prim_onehot_mux  #(
       .Width(DataWidth),
       .Inputs(NUM_WORDS)
+    ) u_msg1_a_mux (
+      .clk_i,
+      .rst_ni,
+      .in_i  (rf_reg),
+      .sel_i (raddr_msg1_onehot),
+      .out_o (rdata_msg1_o)
+    );
+
+    prim_onehot_mux  #(
+      .Width(DataWidth),
+      .Inputs(NUM_WORDS)
+    ) u_msg2_a_mux (
+      .clk_i,
+      .rst_ni,
+      .in_i  (rf_reg),
+      .sel_i (raddr_msg2_onehot),
+      .out_o (rdata_msg2_o)
+    );
+
+    prim_onehot_mux  #(
+      .Width(DataWidth),
+      .Inputs(NUM_WORDS)
+    ) u_msg3_a_mux (
+      .clk_i,
+      .rst_ni,
+      .in_i  (rf_reg),
+      .sel_i (raddr_msg3_onehot),
+      .out_o (rdata_msg3_o)
+    );
+
+    prim_onehot_mux  #(
+      .Width(DataWidth),
+      .Inputs(NUM_WORDS)
     ) u_rdata_b_mux (
       .clk_i,
       .rst_ni,
@@ -246,6 +318,9 @@ module ibex_register_file_ff #(
   end else begin : gen_no_rdata_mux_check
     assign rdata_a_o = rf_reg[raddr_a_i];
     assign rdata_b_o = rf_reg[raddr_b_i];
+    assign rdata_msg1_o = rf_reg[raddr_a_i+1];
+    assign rdata_msg2_o = rf_reg[raddr_a_i+2];
+    assign rdata_msg3_o = rf_reg[raddr_a_i+3];
     assign oh_raddr_a_err = 1'b0;
     assign oh_raddr_b_err = 1'b0;
   end

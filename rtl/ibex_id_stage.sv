@@ -93,6 +93,8 @@ module ibex_id_stage #(
   output logic                      multdiv_ready_id_o,
 
   output logic msg_en,
+  output logic [1:0] len_o,
+  output logic mem_or_reg,
 
   // CSR
   output logic                      csr_access_o,
@@ -511,7 +513,9 @@ module ibex_id_stage #(
     .branch_in_dec_o(branch_in_dec),
 
     //custom msg
-    .msg_en(msg_en)
+    .msg_en(msg_en),
+    .len_o(len_o),
+    .mem_or_reg(mem_or_reg)
   );
 
   /////////////////////////////////

@@ -407,6 +407,8 @@ module ibex_lockstep import ibex_pkg::*; #(
     .data_rdata_i        (shadow_inputs_q[0].data_rdata),
     .data_err_i          (shadow_inputs_q[0].data_err),
     .msg_en(),
+    .len_o(),
+    .mem_or_reg(),
 
     .dummy_instr_id_o    (shadow_outputs_d.dummy_instr_id),
     .dummy_instr_wb_o    (shadow_outputs_d.dummy_instr_wb),
