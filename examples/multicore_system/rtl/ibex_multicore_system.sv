@@ -53,7 +53,7 @@ module ibex_multicore_system (
   parameter bit                 ICacheECC                = 1'b0;
   parameter bit                 BranchPredictor          = 1'b0;
   parameter                     SRAMInitFile             = "";
-  parameter int unsigned        CPUCount                 = 2;
+  parameter int unsigned        CPUCount                 = 4;
 
   logic clk_sys = 1'b0, rst_sys_n;
 
@@ -350,13 +350,13 @@ generate
       .WritebackStage  ( WritebackStage   ),
       .BranchPredictor ( BranchPredictor  ),
       .DbgTriggerEn    ( DbgTriggerEn     ),
-      .DmBaseAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
-      //.DmBaseAddr(32'h00100000),
+      //.DmBaseAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
+      .DmBaseAddr(32'h00100000),
       .DmAddrMask      ( 32'h00000003     ),
-      .DmHaltAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
-      //.DmHaltAddr(32'h00100000),
-      .DmExceptionAddr ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ) //
-      //.DmExceptionAddr(32'h00100000)
+      //.DmHaltAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
+      .DmHaltAddr(32'h00100000),
+      //.DmExceptionAddr ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ) //
+      .DmExceptionAddr(32'h00100000)
     ) u_top (
       .clk_i                  (clk_sys),
       .rst_ni                 (rst_sys_n),
@@ -367,8 +367,8 @@ generate
 
       .hart_id_i              (i),
       // First instruction executed is at 0x0 + 0x80
-      .boot_addr_i            (32'h00100000 + (((32'hFFFFF) + 1)/NrHosts)*i), // technically includes 200000, one bad addr
-      //.boot_addr_i(32'h00100000),
+      //.boot_addr_i            (32'h00100000 + (((32'hFFFFF) + 1)/NrHosts)*i), // technically includes 200000, one bad addr
+      .boot_addr_i(32'h00100000),
 
       .instr_req_o            (instr_req[i]),
       .instr_gnt_i            (instr_gnt[i]),

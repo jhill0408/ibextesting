@@ -11,7 +11,7 @@ MEMORY
    CoreMark run (.vmem of 152.8KB).
 */
     ram         : ORIGIN = 0x00100000, LENGTH = 0x30000 /* 192 kB */
-    stack       : ORIGIN = 0x00130000, LENGTH = 0x8000  /* 32 kB */
+    stack       : ORIGIN = 0x00130000, LENGTH = 0xFF00  /* 32 kB */
 }
 
 /* Stack information variables */
