@@ -81,21 +81,41 @@ module ibex_multicore_system (
   */
  /* verilator lint_off UNDRIVEN */
  /* verilator lint_off UNUSEDSIGNAL */
-  logic [NrHosts-1:0] valid_i;
+  logic valid_i [NrHosts];
   
-  logic [NrHosts-1:0] valid_o;
-  logic [NrHosts-1:0] [31:0] data_i;
-  logic [NrHosts-1:0] [31:0] data_o;
-  logic [NrHosts-1:0] [4:0] addr_i;
-  logic [NrHosts-1:0] [4:0] addr_o;
-  logic [NrHosts-1:0] [1:0] len_i;
-  logic [NrHosts-1:0] [1:0] len_o;
-  logic [NrHosts-1:0] [31:0] msg1_data;
-  logic [NrHosts-1:0] [31:0] msg2_data;
-  logic [NrHosts-1:0] [31:0] msg3_data;
-  logic [NrHosts-1:0] [31:0] msg1_data_i;
-  logic [NrHosts-1:0] [31:0] msg2_data_i;
-  logic [NrHosts-1:0] [31:0] msg3_data_i;
+  logic valid_o [NrHosts];
+  logic [31:0] data_i [NrHosts];
+  logic [31:0] data_o [NrHosts];
+  logic [4:0] addr_i [NrHosts];
+  logic [4:0] addr_o [NrHosts];
+  logic [4:0] core_o [NrHosts];
+  logic [1:0] len_i [NrHosts];
+  logic [1:0] len_o [NrHosts];
+  logic [31:0] msg1_data [NrHosts];
+  logic [31:0] msg2_data [NrHosts];
+  logic [31:0] msg3_data [NrHosts];
+  logic [31:0] msg1_data_i [NrHosts];
+  logic [31:0] msg2_data_i [NrHosts];
+  logic [31:0] msg3_data_i [NrHosts];
+  logic noc_req_o [NrHosts];
+  logic noc_gnt_i [NrHosts];
+
+  logic [37:0] data_full_i [NrHosts];
+  logic [37:0] data_full_o [NrHosts];
+
+/*
+  assign {addr_i, data_i} = data_full_i; // m
+  assign data_full_o = {addr_o, data_o};
+*/
+generate 
+  for (genvar h = 0; h < NrHosts; h++) begin : gen1
+  assign {valid_i[h], addr_i[h], data_i[h]} = data_full_i[h];
+  assign data_full_o[h] = {valid_o[h], addr_o[h], data_o[h]};
+end
+endgenerate
+
+
+
 
   /* verilator lint_on UNUSEDSIGNAL */
   /* verilator lint_on UNDRIVEN */
@@ -282,6 +302,48 @@ module ibex_multicore_system (
     .cfg_device_addr_mask(bus2cfgmask)
   );
 
+  logic [4:0] addr_base_bus3 [NrHosts];
+  logic [4:0] addr_mask_bus3 [NrHosts];
+
+  generate 
+    for (genvar h = 0; h < NrHosts; h++) begin : genbus3
+    assign addr_base_bus3[h] = 'b0;
+    assign addr_mask_bus3[h] = 'b0;
+    end
+  endgenerate
+
+  bus #(
+    .NrDevices    ( NrHosts ),
+    .NrHosts      ( NrHosts   ),
+    .DataWidth    ( 38        ), // need to have both data, core# and maybe even in_valid
+    .AddressWidth ( 5        )
+  ) u_bus3 (
+    .clk_i               (clk_sys),
+    .rst_ni              (rst_sys_n),
+
+    .host_req_i          (noc_req_o     ),
+    .host_gnt_o          (noc_gnt_i     ),
+    .host_addr_i         (core_o    ),
+    .host_we_i           (      ), 
+    .host_be_i           (     ),
+    .host_wdata_i        (   ),
+    .host_rvalid_o       (  ), // first we try sending in_valid not here, then we try to put it here.
+    .host_rdata_o        (data_full_o  ),
+    .host_err_o          (     ),
+
+    .device_req_o        (  ),
+    .device_addr_o       (  ),
+    .device_we_o         (    ),
+    .device_be_o         (   ),
+    .device_wdata_o      ( ),
+    .device_rvalid_i     (),
+    .device_rdata_i      (data_full_i ),
+    .device_err_i        (  ),
+
+    .cfg_device_addr_base(addr_base_bus3),
+    .cfg_device_addr_mask(addr_mask_bus3)
+  );
+
 
 
 genvar i;
@@ -405,6 +467,7 @@ generate
       .output_valid(valid_o[i]),
       .output_data(data_o[i]),
       .output_addr(addr_o[i]),
+      .output_core(core_o[i]),
       .len_i(len_i[i]),
       .len_o(len_o[i]),
       .msg1_data(msg1_data[i]),
@@ -413,6 +476,8 @@ generate
       .msg1_data_i(msg1_data_i[i]),
       .msg2_data_i(msg2_data_i[i]),
       .msg3_data_i(msg3_data_i[i]),
+      .noc_req(noc_req_o[i]),
+      .noc_gnt(noc_gnt_i[i]),
 
       .irq_software_i         (1'b0),
       .irq_timer_i            (timer_irq),

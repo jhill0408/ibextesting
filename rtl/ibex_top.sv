@@ -85,6 +85,9 @@ module ibex_top import ibex_pkg::*; #(
   output logic [31:0] msg2_data,
   output logic [31:0] msg3_data,
   output logic [4:0] output_addr,
+  output logic [4:0] output_core,
+  output logic noc_req,
+  input logic noc_gnt,
   input logic input_valid,
   input logic [31:0] input_data,
   input logic [4:0] input_addr,
@@ -178,6 +181,7 @@ module ibex_top import ibex_pkg::*; #(
   localparam int unsigned TagSizeECC        = ICacheECC ? (IC_TAG_SIZE + 6) : IC_TAG_SIZE;
   // Scrambling Parameter
   localparam int unsigned NumAddrScrRounds  = ICacheScramble ? 2 : 0;
+  localparam FIFODEPTH = 32;
 
   // Clock signals
   logic                        clk;
@@ -559,13 +563,39 @@ module ibex_top import ibex_pkg::*; #(
 
 
 
-  assign output_data = rf_rdata_a_ecc;
+  //assign output_data = rf_rdata_a_ecc;
   assign msg1_data = rf_msg1data_ecc;
   assign msg2_data = rf_msg2data_ecc;
   assign msg3_data = rf_msg3data_ecc;
-  //assign output_valid = msg_en_r;
-  assign output_valid = msg_en;
-  assign output_addr = rf_rdata_b_ecc[4:0];
+//  assign output_valid = msg_en;
+//  assign output_addr = rf_rdata_b_ecc[4:0];
+//  assign output_core = rf_rdata_b_ecc[9:5];
+
+  logic fifo_read;
+  logic fifo_write;
+  logic [42:0] fifo_indata; // output_valid | output_core | output_addr | output_data, do we need out_valid here tho? cant we just have outvalid = fifo_write?
+  logic [42:0] fifo_outdata;
+  logic [$clog2(FIFODEPTH) - 1 :0] noc_req_cntr;
+
+  assign fifo_write = msg_en;
+  assign noc_req = (noc_req_cntr > 0);
+  assign fifo_read = noc_gnt; // would this be ok with extra latency of fifo?
+  assign fifo_indata = {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
+  assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
+
+  fifo1 #(.DEPTH(FIFODEPTH),
+  .D_W(43)
+  ) u_fifo ( // what should depth be?, addding fifo adds latency but should be fine right
+    .clk(clk_i),
+    .rst(rst_ni),
+    .full(),
+    .empty(),
+    .write(fifo_read),
+    .read(fifo_write),
+    .data_out(fifo_outdata),
+    .data_in(fifo_indata),
+    .occup(noc_req_cntr)
+  );
   
 
   ///////////////////////////////

@@ -48,10 +48,12 @@ module ibex_register_file_ff #(
   output logic                 err_o,
 
   input logic input_valid,
+  /* verilator lint_off UNUSEDSIGNAL */
   input logic [1:0] len_i,
   input logic [31:0] input_msg1,
   input logic [31:0] input_msg2,
   input logic [31:0] input_msg3,
+  /* verilator lint_on UNUSEDSIGNAL */
   input logic [31:0] input_data,
   input logic [4:0] input_addr
 );
@@ -60,6 +62,7 @@ module ibex_register_file_ff #(
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
   logic [DataWidth-1:0] rf_reg   [NUM_WORDS];
+  //logic [DataWidth-1:0] rf_reg_msg [NUM_WORDS];
   logic [NUM_WORDS-1:0] we_a_dec;
   logic [NUM_WORDS-1:0] in_valid_dec;
 
@@ -126,10 +129,8 @@ module ibex_register_file_ff #(
   //    end else if (in_valid_dec[i]) begin
     //    rf_reg_q <= input_data;
       end else begin
-        if (in_valid_dec[i]) begin //prolly better to put this in case maybe
-          rf_reg_q <= input_data;
-        end
-        unique case (len_i) // no need for 00?
+
+       /* unique case (len_i) // no need for 00?
         2'b01: begin
           if (in_valid_dec[i-1]) begin
             rf_reg_q <= input_msg1;
@@ -147,13 +148,35 @@ module ibex_register_file_ff #(
         end
         default: begin
         end
-        endcase
+        endcase */
 
       end
     end
 
     assign rf_reg[i] = rf_reg_q;
   end
+
+  for (genvar i = 0; i < NUM_WORDS; i++) begin : g_rf_msg_flops
+  /* verilator lint_off UNUSEDSIGNAL */
+  logic [DataWidth-1:0] rf_reg_msg_q;
+  /* verilator lint_on UNUSEDSIGNAL */
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      rf_reg_msg_q <= WordZeroVal;
+    end else begin
+      if (in_valid_dec[i]) begin
+        rf_reg_msg_q <= input_data;
+        $display("rf_msg_reg_q[%0d] is written with value %0h", i, input_data);
+
+      end
+
+    end
+  end
+
+ // assign rf_reg_msg[i] = rf_reg_msg_q;
+  end
+
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
