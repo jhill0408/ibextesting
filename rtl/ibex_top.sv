@@ -195,6 +195,7 @@ module ibex_top import ibex_pkg::*; #(
   logic [4:0]                  rf_raddr_b;
   logic [4:0]                  rf_waddr_wb;
   logic                        rf_we_wb;
+  logic                        gprf_mprf_we;
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc, rf_rdata_a_ecc_buf;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc, rf_rdata_b_ecc_buf;
@@ -387,6 +388,7 @@ module ibex_top import ibex_pkg::*; #(
     .rf_raddr_b_o     (rf_raddr_b),
     .rf_waddr_wb_o    (rf_waddr_wb),
     .rf_we_wb_o       (rf_we_wb),
+    .gprf_mprf_we     (gprf_mprf_we),
     .rf_wdata_wb_ecc_o(rf_wdata_wb_ecc),
     .rf_rdata_a_ecc_i (rf_rdata_a_ecc_buf),
     .rf_rdata_b_ecc_i (rf_rdata_b_ecc_buf),
@@ -492,6 +494,7 @@ module ibex_top import ibex_pkg::*; #(
       .waddr_a_i(rf_waddr_wb),
       .wdata_a_i(rf_wdata_wb_ecc),
       .we_a_i   (rf_we_wb),
+      .gprf_mprf_we(gprf_mprf_we),
       .err_o    (rf_alert_major_internal),
 
       .input_addr(input_addr),

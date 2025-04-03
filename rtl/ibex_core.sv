@@ -86,6 +86,7 @@ module ibex_core import ibex_pkg::*; #(
   output logic [4:0]                   rf_raddr_b_o,
   output logic [4:0]                   rf_waddr_wb_o,
   output logic                         rf_we_wb_o,
+  output logic                         gprf_mprf_we,
   output logic [RegFileDataWidth-1:0]  rf_wdata_wb_ecc_o,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_a_ecc_i,
   input  logic [RegFileDataWidth-1:0]  rf_rdata_b_ecc_i,
@@ -688,6 +689,7 @@ module ibex_core import ibex_pkg::*; #(
     .rf_waddr_id_o     (rf_waddr_id),
     .rf_wdata_id_o     (rf_wdata_id),
     .rf_we_id_o        (rf_we_id),
+    .gprf_mprf_we      (gprf_mprf_we),
     .rf_rd_a_wb_match_o(rf_rd_a_wb_match),
     .rf_rd_b_wb_match_o(rf_rd_b_wb_match),
 

@@ -409,6 +409,7 @@ module ibex_lockstep import ibex_pkg::*; #(
     .msg_en(),
     .len_o(),
     .mem_or_reg(),
+    .gprf_mprf_we(),
 
     .dummy_instr_id_o    (shadow_outputs_d.dummy_instr_id),
     .dummy_instr_wb_o    (shadow_outputs_d.dummy_instr_wb),

@@ -43,6 +43,7 @@ module ibex_register_file_ff #(
   input  logic [4:0]           waddr_a_i,
   input  logic [DataWidth-1:0] wdata_a_i,
   input  logic                 we_a_i,
+  input logic                  gprf_mprf_we,
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
   output logic                 err_o,
@@ -70,7 +71,7 @@ module ibex_register_file_ff #(
 
   always_comb begin : we_a_decoder
     for (int unsigned i = 0; i < NUM_WORDS; i++) begin
-      we_a_dec[i] = (waddr_a_i == 5'(i)) ? we_a_i : 1'b0;
+      we_a_dec[i] = (waddr_a_i == 5'(i)) ? (we_a_i) : 1'b0;
     end
   end
 
@@ -124,7 +125,7 @@ module ibex_register_file_ff #(
     always_ff @(posedge clk_i or negedge rst_ni) begin
       if (!rst_ni) begin
         rf_reg_q <= WordZeroVal;
-      end else if (we_a_dec[i]) begin
+      end else if (we_a_dec[i] && !gprf_mprf_we) begin
         rf_reg_q <= wdata_a_i;
   //    end else if (in_valid_dec[i]) begin
     //    rf_reg_q <= input_data;
@@ -166,7 +167,10 @@ module ibex_register_file_ff #(
     if (!rst_ni) begin
       rf_reg_msg_q <= WordZeroVal;
     end else begin
-      if (in_valid_dec[i]) begin
+      if (we_a_dec[i] && gprf_mprf_we) begin
+        rf_reg_msg_q <= wdata_a_i;
+        $display("testing testing testing %0h and %0h", i, wdata_a_i);
+      end else if (in_valid_dec[i]) begin
         rf_reg_msg_q <= input_data;
         $display("rf_msg_reg_q[%0d] is written with value %0h, at %t", i, input_data, $time);
 
