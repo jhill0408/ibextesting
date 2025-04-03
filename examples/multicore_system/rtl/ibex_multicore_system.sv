@@ -111,6 +111,23 @@ generate
   for (genvar h = 0; h < NrHosts; h++) begin : gen1
   assign {valid_i[h], addr_i[h], data_i[h]} = data_full_i[h];
   assign data_full_o[h] = {valid_o[h], addr_o[h], data_o[h]};
+
+  always @(posedge clk_sys) begin :blck0
+
+
+    if (data_full_o[h] != 0) begin
+     // $display("data_full_0 is %0h at h %0h", data_full_o[h], h);
+      //$display("ibex_multicore with the data_o being %0h", data_o);
+    end
+    if (data_o[h] != 0) begin
+      //$display("wwwwwww %0h at %0h", data_o[h], h);
+      //$display("Full_o = {%b, %h, %h} at %0h", valid_o[h], addr_o[h], data_o[h], h);
+
+    end
+    if (data_full_i[h] != 0) begin 
+     // $display("data_full_i is %0h at h %0h", data_full_i[h], h);
+    end
+  end
 end
 endgenerate
 
@@ -307,8 +324,8 @@ endgenerate
 
   generate 
     for (genvar h = 0; h < NrHosts; h++) begin : genbus3
-    assign addr_base_bus3[h] = 'b0;
-    assign addr_mask_bus3[h] = 'b0;
+    assign addr_base_bus3[h] = h;
+    assign addr_mask_bus3[h] = 'b11111;
     end
   endgenerate
 
@@ -326,18 +343,18 @@ endgenerate
     .host_addr_i         (core_o    ),
     .host_we_i           (      ), 
     .host_be_i           (     ),
-    .host_wdata_i        (   ),
+    .host_wdata_i        ( data_full_o  ),
     .host_rvalid_o       (  ), // first we try sending in_valid not here, then we try to put it here.
-    .host_rdata_o        (data_full_o  ),
+    .host_rdata_o        (  ),
     .host_err_o          (     ),
 
     .device_req_o        (  ),
     .device_addr_o       (  ),
     .device_we_o         (    ),
     .device_be_o         (   ),
-    .device_wdata_o      ( ),
+    .device_wdata_o      (data_full_i ),
     .device_rvalid_i     (),
-    .device_rdata_i      (data_full_i ),
+    .device_rdata_i      ( ),
     .device_err_i        (  ),
 
     .cfg_device_addr_base(addr_base_bus3),

@@ -26,11 +26,12 @@ assign full = occup == (DEPTH-1) ? 1 : 0;
 assign empty = occup == 0 ? 1 : 0;
 //assign occup_o = occup;
 
+assign data_out = mem[rdaddr];
+
 always @(posedge clk or negedge rst) begin
     if (!rst) begin
         mem<=0;
     end else begin
-    data_out <= read? mem[rdaddr] : '0;
     if (write)
         mem[wraddr] <= data_in;
     end

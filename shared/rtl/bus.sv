@@ -61,6 +61,8 @@ module bus #(
   logic [NumBitsHostSel-1:0] host_sel_req, host_sel_resp;
   logic [NumBitsDeviceSel-1:0] device_sel_req, device_sel_resp;
 
+
+
   // Master select prio arbiter
   always_comb begin
     host_sel_valid = 1'b0;
@@ -108,6 +110,8 @@ module bus #(
         device_addr_o[device]  = host_addr_i[host_sel_req];
         device_wdata_o[device] = host_wdata_i[host_sel_req];
         device_be_o[device]    = host_be_i[host_sel_req];
+
+        
       end else begin
         device_req_o[device]   = 1'b0;
         device_we_o[device]    = 1'b0;
@@ -133,4 +137,42 @@ module bus #(
     end
     host_gnt_o[host_sel_req] = host_req_i[host_sel_req];
   end
+
+
+generate
+for (genvar i = 0; i < NrHosts; i++) begin : testblk0
+  always @(posedge clk_i) begin
+    if(NrDevices == 4) begin
+    if (host_wdata_i[i] != 0) begin
+     // $display("bus hostwdatai is %0h at i %0h", host_wdata_i[i], i);
+  //    $display("why %0h and %0h and %0h", device_sel_valid, device_sel_req, host_addr_i[i]);
+    //  $display("why2 %0h and %0h and %0h", cfg_device_addr_mask[0], cfg_device_addr_base[0], host_sel_req);
+     // $display("why3 %0h",device_sel_valid && NumBitsDeviceSel'(0) == device_sel_req );
+      /* verilator lint_off SELRANGE */
+    //  $display("should be something as above %0h", device_wdata_o[0]);
+
+      /* verilator lint_on SELRANGE */
+    end
+  end
+  end
+end
+endgenerate
+
+generate
+for (genvar i = 0; i < NrDevices; i++) begin : testblk1
+  always @(posedge clk_i) begin
+    if(NrDevices == 4) begin
+    if (device_wdata_o[i] != 0) begin
+     // $display("bus devicewdatao is %0h at i %0h", device_wdata_o[i], i);
+    end
+    if (device_sel_valid && NumBitsDeviceSel'(i) == device_sel_req) begin
+      /* verilator lint_off SELRANGE */
+      //$display("SIGN %0h and %0h", i, host_wdata_i[1]);
+      /* verilator lint_onn SELRANGE */
+    end
+  end
+  end
+end
+endgenerate
+
 endmodule

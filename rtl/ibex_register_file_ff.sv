@@ -161,20 +161,20 @@ module ibex_register_file_ff #(
   logic [DataWidth-1:0] rf_reg_msg_q;
   /* verilator lint_on UNUSEDSIGNAL */
 
+
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       rf_reg_msg_q <= WordZeroVal;
     end else begin
       if (in_valid_dec[i]) begin
         rf_reg_msg_q <= input_data;
-        $display("rf_msg_reg_q[%0d] is written with value %0h", i, input_data);
+        $display("rf_msg_reg_q[%0d] is written with value %0h, at %t", i, input_data, $time);
 
       end
 
     end
   end
 
- // assign rf_reg_msg[i] = rf_reg_msg_q;
   end
 
 

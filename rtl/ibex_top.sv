@@ -272,7 +272,7 @@ module ibex_top import ibex_pkg::*; #(
 
   assign core_sleep_o = ~clock_en;
 
-  prim_clock_gating core_clock_gate_i (
+  prim_clock_gating core_clock_gate_i ( //bvroken?????
     .clk_i    (clk_i),
     .en_i     (clock_en),
     .test_en_i(test_en_i),
@@ -358,7 +358,7 @@ module ibex_top import ibex_pkg::*; #(
     .DmHaltAddr       (DmHaltAddr),
     .DmExceptionAddr  (DmExceptionAddr)
   ) u_ibex_core (
-    .clk_i(clk),
+    .clk_i(clk_i),
     .rst_ni,
 
     .hart_id_i,
@@ -478,7 +478,7 @@ module ibex_top import ibex_pkg::*; #(
       .RdataMuxCheck    (RegFileRdataMuxCheck),
       .WordZeroVal      (RegFileDataWidth'(prim_secded_pkg::SecdedInv3932ZeroWord))
     ) register_file_i (
-      .clk_i (clk),
+      .clk_i (clk_i),
       .rst_ni(rst_ni),
 
       .test_en_i       (test_en_i),
@@ -576,12 +576,72 @@ module ibex_top import ibex_pkg::*; #(
   logic [42:0] fifo_indata; // output_valid | output_core | output_addr | output_data, do we need out_valid here tho? cant we just have outvalid = fifo_write?
   logic [42:0] fifo_outdata;
   logic [$clog2(FIFODEPTH) - 1 :0] noc_req_cntr;
+    /* verilator lint_off UNUSEDSIGNAL */
+
+  logic noc_req_w;
+  logic noc_req_w_min1;
+  //logic fifo_readmin1;
 
   assign fifo_write = msg_en;
-  assign noc_req = (noc_req_cntr > 0);
+  assign noc_req_w = (noc_req_cntr > 0);
   assign fifo_read = noc_gnt; // would this be ok with extra latency of fifo?
   assign fifo_indata = {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
   assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
+  //assign noc_req = noc_req_w || noc_req_w_min1;
+  assign noc_req = noc_req_w;
+
+  integer fd;
+
+  initial begin
+    fd = $fopen("output.txt", "w");
+  end
+
+always @(posedge clk or negedge rst_ni) begin
+
+  if (hart_id_i == 2) begin
+  
+ $fdisplay(fd, "only couple times %0h and %0h, at %t", noc_req_cntr, hart_id_i, $time); // PROBLEM IS OVERFLOW OF OCCUPANCY, READ/GNT IS HIGH FOR TOO LONG
+ if (noc_gnt || noc_req) begin
+  $fdisplay(fd, "why is it high so much, with data %0b and req %0h at %t", fifo_outdata, noc_req, $time);
+ end
+  end
+ 
+
+  if (msg_en) begin
+   // $display("four times");
+  end
+
+  if (fifo_read) begin
+   // $display("four times too");
+  end
+  
+  if (!rst_ni) begin
+    noc_req_w_min1 <= 'b0;
+  end else begin
+    noc_req_w_min1 <= noc_req_w;
+  end
+end
+/*
+  always @(posedge clk) begin
+    fifo_readmin1 <= fifo_read;
+    if (fifo_write) begin
+    $display("ibex_top fifo is being writted value %0h", fifo_indata);
+    end
+
+    if (fifo_read) begin
+      $display("ibex_top fifo output %0h", fifo_outdata);
+
+    end
+    if (fifo_readmin1) begin
+      $display("ibex_top fifo output min 1 %0h", fifo_outdata);
+    end
+
+    if (fifo_outdata != 0) begin
+      $display("help me %0h", fifo_outdata);
+    end
+
+  end
+  */
 
   fifo1 #(.DEPTH(FIFODEPTH),
   .D_W(43)
@@ -590,8 +650,8 @@ module ibex_top import ibex_pkg::*; #(
     .rst(rst_ni),
     .full(),
     .empty(),
-    .write(fifo_read),
-    .read(fifo_write),
+    .write(fifo_write),
+    .read(fifo_read),
     .data_out(fifo_outdata),
     .data_in(fifo_indata),
     .occup(noc_req_cntr)

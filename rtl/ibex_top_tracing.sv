@@ -185,6 +185,12 @@ module ibex_top_tracing import ibex_pkg::*; #(
   assign unused_rvfi_ext_ic_scr_key_valid = rvfi_ext_ic_scr_key_valid;
   assign unused_rvfi_ext_irq_valid = rvfi_ext_irq_valid;
 
+  always @(posedge clk_i) begin
+    if (output_data != 0) begin
+     // $display("ibex_top_tracing data is %0h core is %0h addr is %0h and vlaid is %0h", output_data, output_core, output_addr, output_valid);
+    end
+  end
+
   ibex_top #(
     .PMPEnable        ( PMPEnable        ),
     .PMPGranularity   ( PMPGranularity   ),
