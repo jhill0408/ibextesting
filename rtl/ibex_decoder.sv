@@ -330,6 +330,7 @@ module ibex_decoder #(
         data_req_o         = 1'b0; // prolly not need data access
         data_we_o          = 1'b0; // prolly dont need to write to memory
         msg_en             = 1'b1;
+        use_mprf = instr[12];
         data_type_o = 2'b00;
       end
 
@@ -984,7 +985,7 @@ module ibex_decoder #(
       OPCODE_CUST: begin
         alu_op_a_mux_sel_o = OP_A_REG_A;
         alu_op_b_mux_sel_o = OP_B_REG_B;
-        alu_operator_o     = ALU_CUST;
+        alu_operator_o     = ALU_CUST; // un needed
       
       end
 

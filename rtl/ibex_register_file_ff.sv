@@ -67,6 +67,7 @@ module ibex_register_file_ff #(
   logic [DataWidth-1:0] rf_reg_msg [NUM_WORDS];
   /* verilator lint_off UNUSEDSIGNAL */
   logic [DataWidth-1:0] rdata_a_src [NUM_WORDS]; // why, it should be used??? prob need to move it below into that if statement
+  logic [DataWidth-1:0] rdata_b_src [NUM_WORDS]; // technically not needed, should use rdata_a_src instead
   /* verilator lint_on UNUSEDSIGNAL */
   logic [NUM_WORDS-1:0] we_a_dec;
   logic [NUM_WORDS-1:0] in_valid_dec;
@@ -75,11 +76,13 @@ module ibex_register_file_ff #(
 
   for (genvar i =0; i < NUM_WORDS; i++) begin : r_data_a_src
     assign rdata_a_src[i] = (use_mprf) ? rf_reg_msg[i] : rf_reg[i];
+    assign rdata_b_src[i] = (use_mprf) ? rf_reg_msg[i] : rf_reg[i];
   end
+
 
   always @(posedge clk_i) begin
     if (use_mprf) begin
-      $display("why  not working lol %0h and %0h and %0h", rf_reg_msg[raddr_a_i], raddr_a_i, waddr_a_i);
+      $display("why  not working lol %0h and %0h and %0h and %0h", rf_reg_msg[raddr_a_i], raddr_a_i, waddr_a_i, we_a_i);
     end
   end
 
@@ -171,7 +174,7 @@ module ibex_register_file_ff #(
     assign rf_reg[i] = rf_reg_q;
   end
 
-  for (genvar i = 0; i < NUM_WORDS; i++) begin : g_rf_msg_flops
+  for (genvar i = 1; i < NUM_WORDS; i++) begin : g_rf_msg_flops // keep MPRF[0] as hardwired to 0
   /* verilator lint_off UNUSEDSIGNAL */
   logic [DataWidth-1:0] rf_reg_msg_q;
   /* verilator lint_on UNUSEDSIGNAL */
@@ -320,7 +323,7 @@ module ibex_register_file_ff #(
     ) u_msg1_a_mux (
       .clk_i,
       .rst_ni,
-      .in_i  (rf_reg),
+      .in_i  (rdata_b_src),
       .sel_i (raddr_msg1_onehot),
       .out_o (rdata_msg1_o)
     );
@@ -359,7 +362,7 @@ module ibex_register_file_ff #(
     );
   end else begin : gen_no_rdata_mux_check
     assign rdata_a_o = (use_mprf) ? rf_reg_msg[raddr_a_i] : rf_reg[raddr_a_i];
-    assign rdata_b_o = rf_reg[raddr_b_i]; // not have option to use mprf for this one, so that x0 for this will always be 0, so we cna do mov using add rs1 x0
+    assign rdata_b_o = (use_mprf) ? rf_reg_msg[raddr_b_i] : rf_reg[raddr_b_i];
     assign rdata_msg1_o = rf_reg[raddr_a_i+1];
     assign rdata_msg2_o = rf_reg[raddr_a_i+2];
     assign rdata_msg3_o = rf_reg[raddr_a_i+3];
