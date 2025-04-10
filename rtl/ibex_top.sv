@@ -196,6 +196,7 @@ module ibex_top import ibex_pkg::*; #(
   logic [4:0]                  rf_waddr_wb;
   logic                        rf_we_wb;
   logic                        gprf_mprf_we;
+  logic                        use_mprf;
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc, rf_rdata_a_ecc_buf;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc, rf_rdata_b_ecc_buf;
@@ -389,6 +390,7 @@ module ibex_top import ibex_pkg::*; #(
     .rf_waddr_wb_o    (rf_waddr_wb),
     .rf_we_wb_o       (rf_we_wb),
     .gprf_mprf_we     (gprf_mprf_we),
+    .use_mprf         (use_mprf),
     .rf_wdata_wb_ecc_o(rf_wdata_wb_ecc),
     .rf_rdata_a_ecc_i (rf_rdata_a_ecc_buf),
     .rf_rdata_b_ecc_i (rf_rdata_b_ecc_buf),
@@ -495,6 +497,7 @@ module ibex_top import ibex_pkg::*; #(
       .wdata_a_i(rf_wdata_wb_ecc),
       .we_a_i   (rf_we_wb),
       .gprf_mprf_we(gprf_mprf_we),
+      .use_mprf(use_mprf),
       .err_o    (rf_alert_major_internal),
 
       .input_addr(input_addr),
@@ -593,58 +596,13 @@ module ibex_top import ibex_pkg::*; #(
   //assign noc_req = noc_req_w || noc_req_w_min1;
   assign noc_req = noc_req_w;
 
-  integer fd;
-
-  initial begin
-    fd = $fopen("output.txt", "w");
-  end
-
 always @(posedge clk or negedge rst_ni) begin
-
-  if (hart_id_i == 2) begin
-  
- $fdisplay(fd, "only couple times %0h and %0h, at %t", noc_req_cntr, hart_id_i, $time); // PROBLEM IS OVERFLOW OF OCCUPANCY, READ/GNT IS HIGH FOR TOO LONG
- if (noc_gnt || noc_req) begin
-  $fdisplay(fd, "why is it high so much, with data %0b and req %0h at %t", fifo_outdata, noc_req, $time);
- end
-  end
- 
-
-  if (msg_en) begin
-   // $display("four times");
-  end
-
-  if (fifo_read) begin
-   // $display("four times too");
-  end
-  
   if (!rst_ni) begin
     noc_req_w_min1 <= 'b0;
   end else begin
     noc_req_w_min1 <= noc_req_w;
   end
 end
-/*
-  always @(posedge clk) begin
-    fifo_readmin1 <= fifo_read;
-    if (fifo_write) begin
-    $display("ibex_top fifo is being writted value %0h", fifo_indata);
-    end
-
-    if (fifo_read) begin
-      $display("ibex_top fifo output %0h", fifo_outdata);
-
-    end
-    if (fifo_readmin1) begin
-      $display("ibex_top fifo output min 1 %0h", fifo_outdata);
-    end
-
-    if (fifo_outdata != 0) begin
-      $display("help me %0h", fifo_outdata);
-    end
-
-  end
-  */
 
   fifo1 #(.DEPTH(FIFODEPTH),
   .D_W(43)

@@ -58,6 +58,7 @@ module ibex_decoder #(
   output ibex_pkg::rf_wd_sel_e rf_wdata_sel_o,   // RF write data selection
   output logic                 rf_we_o,          // write enable for regfile
   output logic                 gprf_mprf_we,
+  output logic                 use_mprf,
   output logic [4:0]           rf_raddr_a_o,
   output logic [4:0]           rf_raddr_b_o,
   output logic [4:0]           rf_waddr_o,
@@ -220,6 +221,7 @@ module ibex_decoder #(
     rf_wdata_sel_o        = RF_WD_EX;
     rf_we                 = 1'b0;
     gprf_mprf_we          = 1'b0;
+    use_mprf              = 1'b0;
     rf_ren_a_o            = 1'b0;
     rf_ren_b_o            = 1'b0;
 
@@ -240,7 +242,7 @@ module ibex_decoder #(
     wfi_insn_o            = 1'b0;
 
     msg_en                = 1'b0;
-    len_o                   = instr[13:12];
+    len_o                   = 'b0;
     mem_or_reg            = instr[14];
 
     opcode                = opcode_e'(instr[6:0]);
@@ -470,7 +472,8 @@ module ibex_decoder #(
       rf_ren_a_o = 1'b1;
       rf_ren_b_o = 1'b1;
       rf_we = 1'b1;
-      gprf_mprf_we = 1'b1;
+      use_mprf = instr[12];
+      gprf_mprf_we = (use_mprf) ? 1'b0 : 1'b1; // write from gprf to mprf if we are not using mprf values (if we are not, we are writing from mprf to gprf)
       illegal_insn = 1'b0;
       end
 

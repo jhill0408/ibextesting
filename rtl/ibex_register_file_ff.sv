@@ -44,6 +44,7 @@ module ibex_register_file_ff #(
   input  logic [DataWidth-1:0] wdata_a_i,
   input  logic                 we_a_i,
   input logic                  gprf_mprf_we,
+  input logic                  use_mprf,
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
   output logic                 err_o,
@@ -63,11 +64,24 @@ module ibex_register_file_ff #(
   localparam int unsigned NUM_WORDS  = 2**ADDR_WIDTH;
 
   logic [DataWidth-1:0] rf_reg   [NUM_WORDS];
-  //logic [DataWidth-1:0] rf_reg_msg [NUM_WORDS];
+  logic [DataWidth-1:0] rf_reg_msg [NUM_WORDS];
+  /* verilator lint_off UNUSEDSIGNAL */
+  logic [DataWidth-1:0] rdata_a_src [NUM_WORDS]; // why, it should be used??? prob need to move it below into that if statement
+  /* verilator lint_on UNUSEDSIGNAL */
   logic [NUM_WORDS-1:0] we_a_dec;
   logic [NUM_WORDS-1:0] in_valid_dec;
 
   logic oh_raddr_a_err, oh_raddr_b_err, oh_we_err;
+
+  for (genvar i =0; i < NUM_WORDS; i++) begin : r_data_a_src
+    assign rdata_a_src[i] = (use_mprf) ? rf_reg_msg[i] : rf_reg[i];
+  end
+
+  always @(posedge clk_i) begin
+    if (use_mprf) begin
+      $display("why  not working lol %0h and %0h and %0h", rf_reg_msg[raddr_a_i], raddr_a_i, waddr_a_i);
+    end
+  end
 
   always_comb begin : we_a_decoder
     for (int unsigned i = 0; i < NUM_WORDS; i++) begin
@@ -178,6 +192,7 @@ module ibex_register_file_ff #(
 
     end
   end
+  assign rf_reg_msg[i] = rf_reg_msg_q;
 
   end
 
@@ -294,7 +309,7 @@ module ibex_register_file_ff #(
     ) u_rdata_a_mux (
       .clk_i,
       .rst_ni,
-      .in_i  (rf_reg),
+      .in_i  (rdata_a_src),
       .sel_i (raddr_onehot_a),
       .out_o (rdata_a_o)
     );
@@ -343,8 +358,8 @@ module ibex_register_file_ff #(
       .out_o (rdata_b_o)
     );
   end else begin : gen_no_rdata_mux_check
-    assign rdata_a_o = rf_reg[raddr_a_i];
-    assign rdata_b_o = rf_reg[raddr_b_i];
+    assign rdata_a_o = (use_mprf) ? rf_reg_msg[raddr_a_i] : rf_reg[raddr_a_i];
+    assign rdata_b_o = rf_reg[raddr_b_i]; // not have option to use mprf for this one, so that x0 for this will always be 0, so we cna do mov using add rs1 x0
     assign rdata_msg1_o = rf_reg[raddr_a_i+1];
     assign rdata_msg2_o = rf_reg[raddr_a_i+2];
     assign rdata_msg3_o = rf_reg[raddr_a_i+3];

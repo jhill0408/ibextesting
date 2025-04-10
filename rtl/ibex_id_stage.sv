@@ -170,6 +170,7 @@ module ibex_id_stage #(
   output logic [31:0]               rf_wdata_id_o,
   output logic                      rf_we_id_o,
   output logic                      gprf_mprf_we,
+  output logic                      use_mprf,
   output logic                      rf_rd_a_wb_match_o,
   output logic                      rf_rd_b_wb_match_o,
 
@@ -479,6 +480,7 @@ module ibex_id_stage #(
     .rf_wdata_sel_o(rf_wdata_sel),
     .rf_we_o       (rf_we_dec),
     .gprf_mprf_we(gprf_mprf_we),
+    .use_mprf(use_mprf),
 
     .rf_raddr_a_o(rf_raddr_a_o),
     .rf_raddr_b_o(rf_raddr_b_o),
