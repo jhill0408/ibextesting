@@ -140,6 +140,7 @@ test5 = test5 + test4;
     int test1;
     int test2;
     int test3;
+    test3 = 1;
 
     if (test4 == 1) {
       /*
@@ -164,17 +165,37 @@ test5 = test5 + test4;
     asm volatile ("csrr %0, mhartid" : "=r"(test4));
 
     if (test4 == 2) {
-      test1 = 0xDABB;
-      test2 = 0b0000100000;
+      test1 = 0xAABB;
+      test2 = 0b0000100001;
+
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
+        :
+        : "r"(test1)
+    ); // no clobber cuz modifying mprf
+
     asm volatile (
- 		".insn r 0x2B, 0x0, 0x00, %0, %1, %2"
+      ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
+      :
+      : "r"(test2)
+  ); // no clobber cuz modifying mprf
+
+    asm volatile (
+      ".insn r 0x0B, 0b001, 0x00, x5, x1, x0" // gprf[5] is written the value of mprf[1]
+      :
+      : 
+      : "x5" // clobbering cuz changing gprf
+  );
+    
+    asm volatile ( // sending 0xAABB (from MPRF[1]) to core 1 MPRF[1] (addr info in MPRF[2])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x1, x2"
   		:"=r"(test3)
-		:"r"(test1), "r"(test2)
+		:
 		 
   		);
 
       test1 = 0xEABB;
-      test2 = 0b0000100001;
+      test2 = 0b0000100010;
     asm volatile (
  		".insn r 0x2B, 0x0, 0x00, %0, %1, %2"
   		:"=r"(test3)
