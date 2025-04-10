@@ -64,59 +64,15 @@ void init() {
 }
 
 int main(int argc, char **argv) {
- // init();
+
   pcount_enable(0);
   pcount_reset();
   pcount_enable(1);
-  //print_sp();
-
-   // puts("Hello simple system\n");
-  // puthex(0xDEADBEEF);
-  // putchar('\n');
-  // puthex(0xBAADF00D);
-  // putchar('\n');
-
   pcount_enable(0);
-
-  // Enable periodic timer interrupt
-  // (the actual timebase is a bit meaningless in simulation)
   timer_enable(2000);
-
   uint64_t last_elapsed_time = get_elapsed_time();
-  //int test1 = 9;
-  //int test2 = 18;
-  //int test3;
-
-  //asm volatile (
- 	//	".insn r 0x2B, 0x0, 0x00, %0, %1, %2"
-  //		:"=r"(test3)
-	//	:"r"(test1), "r"(test2)
-		 
-  //		);
-
   int test4;
- // int test = 10;
- // asm volatile (
- //   "mv s2, %0"
- //   :
- //   : "r"(test)
-//);
-asm volatile ("mv %0, x18" : "=r"(test4)); 
-
-int test5;
-asm volatile ("csrr %0, mhartid" : "=r"(test5));
-
-test4 = 11;
-test5 = test5 + test4;
-
-    char testchar[6];
-   snprintf(testchar, sizeof(testchar), "%d", test5);
-    puts("output is:\n");
-    //puts("lasflsflsalfsalfsalfsalfsalflsalfsalfsalfsalflsaflsafsaflsaflsalfa");
-    puts(testchar);
-    putchar('\n');
-
-    asm volatile ("csrr %0, mhartid" : "=r"(test4));
+  asm volatile ("csrr %0, mhartid" : "=r"(test4));
 /*
     if (test4 == 0) {
       puts("zeroth \n");
@@ -130,18 +86,6 @@ test5 = test5 + test4;
       puts("unknown \n");
   }
       */
-  
-   snprintf(testchar, sizeof(testchar), "%d", test4);
-    puts("core is:\n");
-    //puts("lasflsflsalfsalfsalfsalfsalflsalfsalfsalfsalflsaflsafsaflsaflsalfa");
-    puts(testchar);
-    putchar('\n');
-
-    int test1;
-    int test2;
-    int test3;
-    test3 = 1;
-
     if (test4 == 1) {
       /*
       test1 = 0xAABB;
@@ -164,21 +108,259 @@ test5 = test5 + test4;
 
     asm volatile ("csrr %0, mhartid" : "=r"(test4));
 
-    if (test4 == 2) {
-      test1 = 0xAABB;
-      test2 = 0b0000100001;
-
+    if (test4 == 0) {
+      int test3;
+      test3 =0;
+      int counter;
+      int counter_addr;
+      int token_addr;
+      int token;
+      counter = 1;
+      counter_addr= 0b0000100001;
+      token_addr = 0b0000100011;
+      token = 1;
       asm volatile (
         ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
         :
-        : "r"(test1)
+        : "r"(counter)
     ); // no clobber cuz modifying mprf
 
     asm volatile (
       ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
       :
-      : "r"(test2)
+      : "r"(counter_addr)
   ); // no clobber cuz modifying mprf
+
+  asm volatile (
+    ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+    :
+    : "r"(token)
+); // no clobber cuz modifying mprf
+
+asm volatile (
+  ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
+  :
+  : "r"(token_addr)
+); // no clobber cuz modifying mprf
+
+asm volatile ( // sending 0x1 (from core0 MPRF[1]) to core 1 MPRF[1] (addr info in core0 MPRF[2])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x1, x2"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+
+      asm volatile ( // sending 0x1 (from core0 MPRF[3]) to core 1 MPRF[3] (addr info in core0 MPRF[4])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x3, x4"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+      token = 0;
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+        :
+        : "r"(token)
+    ); // no clobber cuz modifying mprf
+
+
+    } else if (test4 == 1) {
+      int test3;
+      test3 =0;
+      int counter;
+      int counter_addr;
+      int token_addr;
+      int token;
+      counter_addr= 0b0001000001;
+      token_addr = 0b0001000011;
+      token = 0;
+
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
+        :
+        : "r"(counter_addr)
+    ); // no clobber cuz modifying mprf
+    asm volatile (
+      ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
+      :
+      : "r"(token_addr)
+    ); // no clobber cuz modifying mprf
+
+      while (token == 0) {
+        asm volatile (
+          ".insn r 0x0B, 0b001, 0x00, %0, x3, x0" // gprf[5] is written the value of mprf[1]
+          :"=r"(token)
+          : 
+          : // double check how to clobber, if its even necessary
+      );
+
+      asm volatile (
+        ".insn r 0x0B, 0b001, 0x00, %0, x1, x0" // gprf[5] is written the value of mprf[1]
+        :"=r"(counter)
+        : 
+        : // double check how to clobber, if its even necessary
+    );
+
+      }
+
+      counter = counter + 1;
+
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
+        :
+        : "r"(counter)
+    ); // no clobber cuz modifying mprf
+
+    asm volatile (
+      ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+      :
+      : "r"(token)
+  ); // no clobber cuz modifying mprf
+
+      asm volatile ( // sending 0x1 (from core1 MPRF[1]) to core 2 MPRF[1] (addr info in core1 MPRF[2])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x1, x2"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+
+      asm volatile ( // sending 0x1 (from core1 MPRF[3]) to core 2 MPRF[3] (addr info in core1 MPRF[4])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x3, x4"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+      token = 0;
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+        :
+        : "r"(token)
+    ); // no clobber cuz modifying mprf
+
+
+    } else if (test4 == 2) {
+      int test3;
+      test3 =0;
+      int counter;
+      int counter_addr;
+      int token_addr;
+      int token;
+      counter_addr= 0b0001100001;
+      token_addr = 0b0001100011;
+      token = 0;
+
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
+        :
+        : "r"(counter_addr)
+    ); // no clobber cuz modifying mprf
+    asm volatile (
+      ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
+      :
+      : "r"(token_addr)
+    ); // no clobber cuz modifying mprf
+
+      while (token == 0) {
+        asm volatile (
+          ".insn r 0x0B, 0b001, 0x00, %0, x3, x0" // gprf[5] is written the value of mprf[1]
+          :"=r"(token)
+          : 
+          : // double check how to clobber, if its even necessary
+      );
+
+      asm volatile (
+        ".insn r 0x0B, 0b001, 0x00, %0, x1, x0" // gprf[5] is written the value of mprf[1]
+        :"=r"(counter)
+        : 
+        : // double check how to clobber, if its even necessary
+    );
+
+      }
+
+      counter = counter + 1;
+
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
+        :
+        : "r"(counter)
+    ); // no clobber cuz modifying mprf
+
+    asm volatile (
+      ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+      :
+      : "r"(token)
+  ); // no clobber cuz modifying mprf
+
+      asm volatile ( // sending 0x1 (from core2 MPRF[1]) to core 3 MPRF[1] (addr info in core2 MPRF[2])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x1, x2"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+
+      asm volatile ( // sending 0x1 (from core2 MPRF[3]) to core 3 MPRF[3] (addr info in core2 MPRF[4])
+ 		".insn r 0x2B, 0b001, 0x00, %0, x3, x4"
+  		:"=r"(test3)
+		:
+		 
+  		);
+
+      token = 0;
+      asm volatile (
+        ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
+        :
+        : "r"(token)
+    ); // no clobber cuz modifying mprf
+
+    } else if (test4 == 3) {
+
+      //int test3;
+      //test3 =0;
+      int counter;
+      //int counter_addr;
+      //int token_addr;
+      int token;
+      //counter_addr= 0b0001100001;
+      //token_addr = 0b0001100011;
+      token = 0;
+
+      while (token == 0) {
+        asm volatile (
+          ".insn r 0x0B, 0b001, 0x00, %0, x3, x0" // gprf[5] is written the value of mprf[1]
+          :"=r"(token)
+          : 
+          : // double check how to clobber, if its even necessary
+      );
+
+      asm volatile (
+        ".insn r 0x0B, 0b001, 0x00, %0, x1, x0" // gprf[5] is written the value of mprf[1]
+        :"=r"(counter)
+        : 
+        : // double check how to clobber, if its even necessary
+    );
+
+      }
+
+      counter = counter + 1;
+      char testchar[6];
+   snprintf(testchar, sizeof(testchar), "%d", counter);
+    puts("output is:\n");
+    //puts("lasflsflsalfsalfsalfsalfsalflsalfsalfsalfsalflsaflsafsaflsaflsalfa");
+    puts(testchar);
+    putchar('\n');
+
+    }
+/*
+    if (test4 == 2) {
+      test1 = 0xAABB;
+      test2 = 0b0000100001;
+
+      
 
     asm volatile (
       ".insn r 0x0B, 0b001, 0x00, x5, x1, x0" // gprf[5] is written the value of mprf[1]
@@ -204,6 +386,7 @@ test5 = test5 + test4;
   		);
       
     }
+      */
   
   
 
