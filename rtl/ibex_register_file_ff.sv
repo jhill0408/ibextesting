@@ -43,8 +43,8 @@ module ibex_register_file_ff #(
   input  logic [4:0]           waddr_a_i,
   input  logic [DataWidth-1:0] wdata_a_i,
   input  logic                 we_a_i,
-  input logic                  gprf_mprf_we,
-  input logic                  use_mprf,
+  input logic                  gprf_mprf_we, // mprf or gprd destination signal
+  input logic                  use_mprf, // src mprf or gprf?
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
   output logic                 err_o,
@@ -82,7 +82,7 @@ module ibex_register_file_ff #(
 
   always @(posedge clk_i) begin
     if (use_mprf) begin
-      $display("why  not working lol %0h and %0h and %0h and %0h", rf_reg_msg[raddr_a_i], raddr_a_i, waddr_a_i, we_a_i);
+      $display("why  not working lol %0h and %0h and %0h and %0h and %0h", rf_reg_msg[raddr_a_i], raddr_a_i, waddr_a_i, we_a_i, gprf_mprf_we);
     end
   end
 
