@@ -23,6 +23,7 @@ import scipy.sparse as sp
 
 
 HEADER_FILE = pathlib.Path("examples/sw/simple_system/common/dataset.h")
+TEST_RESULTS_FILE = pathlib.Path("examples/sw/simple_system/hello_test/test_results.txt")
 CTYPE       = "int32_t"         
 VAL_LOW = -4
 VAL_HIGH = 4
@@ -90,8 +91,7 @@ def main():
     x[x == 0] = 1
 
     y = A @ x
-
-    print(y)
+    TEST_RESULTS_FILE.write_text("\n".join(str(val) for val in y))
 
 
 

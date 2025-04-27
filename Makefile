@@ -115,3 +115,20 @@ test-cfg:
 .PHONY: python-lint
 python-lint:
 	$(MAKE) -C util lint
+
+.PHONY: run_hello_test repeat_hello_test
+
+run_hello_test:
+	python3 examples/sw/simple_system/hello_test/csrmatrix.py
+	python3 examples/sw/simple_system/hello_test/changecfile.py
+	make -C examples/sw/simple_system/hello_test
+	./build/lowrisc_ibex_ibex_multicore_system_0/sim-verilator/Vibex_multicore_system -t --meminit=ram,./examples/sw/simple_system/hello_test/hello_test.elf
+	python3 examples/sw/simple_system/hello_test/checkresults.py
+
+repeat_hello_test:
+	@count=0; \
+	while [ $$count -lt $(NUM_RUNS) ]; do \
+		echo "Run $$count..."; \
+		$(MAKE) run_hello_test; \
+		count=`expr $$count + 1`; \
+	done
