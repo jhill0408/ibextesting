@@ -53,7 +53,7 @@ module ibex_multicore_system (
   parameter bit                 ICacheECC                = 1'b0;
   parameter bit                 BranchPredictor          = 1'b0;
   parameter                     SRAMInitFile             = "";
-  parameter int unsigned        CPUCount                 = 4;
+  parameter int unsigned        CPUCount                 = 10;
 
   logic clk_sys = 1'b0, rst_sys_n;
 
