@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
 
     int count = 4;
 
-    while (count < 500) {
+    while (count < 501) {
       count = count + 1;
       asm volatile("wfi");
 
