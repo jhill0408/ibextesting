@@ -590,7 +590,7 @@ module ibex_top import ibex_pkg::*; #(
 
   assign fifo_write = msg_en;
   assign noc_req_w = (noc_req_cntr > 0);
-  assign fifo_read = noc_gnt; // would this be ok with extra latency of fifo?
+  assign fifo_read = noc_gnt && noc_req; // would this be ok with extra latency of fifo?
   assign fifo_indata = {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
   assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
   //assign noc_req = noc_req_w || noc_req_w_min1;

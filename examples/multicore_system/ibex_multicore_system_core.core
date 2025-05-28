@@ -10,8 +10,35 @@ filesets:
       - lowrisc:ibex:ibex_top_tracing
       - lowrisc:ibex:sim_shared
     files:
+      - ../../noc/includes/system.h: { file_type: systemVerilogSource, is_include_file: true}
+      - ../../noc/includes/mux.h: { file_type: systemVerilogSource, is_include_file: true}
+      - ../../noc/includes/commands.h: { file_type: systemVerilogSource, is_include_file: true}
+      - ../../noc/rtl/common_pkg.sv
+      - ../../noc/rtl/noc_if.sv
+      - ../../noc/rtl/noc_pipe.sv
+      - ../../noc/rtl/pi_switch_top.sv
+      - ../../noc/rtl/t_switch_top.sv
+      - ../../noc/rtl/axis_if.sv
+      - ../../noc/rtl/axis_noc_bridge.sv
+      - ../../noc/rtl/credit_bp_rx.sv
+      - ../../noc/rtl/credit_bp_tx.sv
+      - ../../noc/rtl/fifo32.sv
+      - ../../noc/rtl/matrix_arbiter.sv
+      - ../../noc/rtl/mux.sv
+      - ../../noc/rtl/pi_route.sv
+      - ../../noc/rtl/pi_switch.sv
+      - ../../noc/rtl/t_route.sv
+      - ../../noc/rtl/t_switch.sv
+      - ../../noc/rtl/topologies/topology_pi_rectangle.sv
+      - ../../noc/rtl/topologies/topology_t_binary_tree.sv
       - rtl/ibex_multicore_system.sv
+    include_globs:
+      - ../../noc/rtl/*.sv
+      - ../../noc/rtl/**/*.sv
+      - ../../noc/rtl/**/*.v
     file_type: systemVerilogSource
+    include_dirs:
+      - ../../noc/includes
 
   files_verilator:
     depend:
@@ -22,6 +49,8 @@ filesets:
       - ibex_multicore_system.cc: { file_type: cppSource }
       - ibex_multicore_system.h:  { file_type: cppSource, is_include_file: true}
       - lint/verilator_waiver.vlt: {file_type: vlt}
+    include_dirs:
+      - ../../noc/includes
 
   files_lint_verible:
     files:

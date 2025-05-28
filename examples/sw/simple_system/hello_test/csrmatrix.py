@@ -77,7 +77,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Create dataset.h containing a random CSR matrix + vector",
     )
-    ap.add_argument("--rows",    type=int, default=20,  help="matrix rows")
+    ap.add_argument("--rows",    type=int, default=10,  help="matrix rows")
     ap.add_argument("--cols",    type=int, default=32,  help="matrix cols")
     ap.add_argument("--density", type=float, default=0.10,
                     help="fraction of non‑zeros (0–1)")

@@ -22,7 +22,6 @@ build-riscv-compliance:
 		lowrisc:ibex:ibex_riscv_compliance \
 		$(FUSESOC_CONFIG_OPTS)
 
-
 # Simple system
 # Use the following targets:
 # - "build-simple-system"
@@ -32,6 +31,11 @@ build-simple-system:
 	fusesoc --cores-root=. run --target=sim --setup --build \
 		lowrisc:ibex:ibex_simple_system \
 		$(FUSESOC_CONFIG_OPTS)
+
+build-multicore-system:
+	fusesoc --cores-root=. run --target=sim --setup --build \
+		lowrisc:ibex:ibex_multicore_system \
+		$(util/ibex_config.py small fusesoc_opts)
 
 simple-system-program = examples/sw/simple_system/hello_test/hello_test.vmem
 sw-simple-hello: $(simple-system-program)

@@ -1,0 +1,29 @@
+[package]
+name    = "noc-rs"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+[lib]
+name = "noc_rs"
+path = "src/lib.rs"
+
+[[bin]]
+name = "log_checker"
+path = "src/bin/log_checker.rs"
+
+[[bin]]
+name = "stats_from_log"
+path = "src/bin/stats_from_log.rs"
+
+[[bin]]
+name = "sweep"
+path = "src/bin/sweep.rs"
+
+[profile.release]
+codegen-units   = 1
+strip           = true
+overflow-checks = false
+panic           = "abort"
+lto             = true
