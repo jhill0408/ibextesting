@@ -129,6 +129,12 @@ run_hello_test:
 	./build/lowrisc_ibex_ibex_multicore_system_0/sim-verilator/Vibex_multicore_system -t --meminit=ram,./examples/sw/simple_system/hello_test/hello_test.elf
 	python3 examples/sw/simple_system/hello_test/checkresults.py
 
+run_hello_test_2:
+	python3 examples/sw/simple_system/hello_test/changecfile.py
+	make -C examples/sw/simple_system/hello_test
+	./build/lowrisc_ibex_ibex_multicore_system_0/sim-verilator/Vibex_multicore_system -t --meminit=ram,./examples/sw/simple_system/hello_test/hello_test.elf
+	python3 examples/sw/simple_system/hello_test/checkresults.py
+
 repeat_hello_test:
 	@count=0; \
 	while [ $$count -lt $(NUM_RUNS) ]; do \
