@@ -70,7 +70,8 @@ noc_if #(
     .A_W(A_W),
     .D_W(D_W)
 ) level_connections_flat [TOTAL_CONNECTIONS-1:0] (
-    .*
+    .clk(clk),
+    .rst(rst)
 );
 
 //Leaf ports after dealing with flops as appropriate
@@ -79,7 +80,8 @@ noc_if #(
     .A_W(A_W),
     .D_W(D_W)
 ) leaf_rx_above_flops [N-1:0] (
-    .*
+    .clk(clk),
+    .rst(rst)
 );
 
 noc_if #(
@@ -87,7 +89,8 @@ noc_if #(
     .A_W(A_W),
     .D_W(D_W)
 ) leaf_tx_above_flops [N-1:0] (
-    .*
+    .clk(clk),
+    .rst(rst)
 );
 
 generate
@@ -98,7 +101,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
         .A_W(A_W),
         .D_W(D_W)
     ) upwards_if_below_flops [`num_switches_in_level(ii)-1:0] (
-        .*
+        .clk(clk),
+        .rst(rst)
     );
 
     noc_if #(
@@ -106,7 +110,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
         .A_W(A_W),
         .D_W(D_W)
     ) upwards_if_above_flops [`num_switches_in_level(ii)-1:0] (
-        .*
+        .clk(clk),
+        .rst(rst)
     );
 
     noc_if #(
@@ -114,7 +119,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
         .A_W(A_W),
         .D_W(D_W)
     ) downwards_if_above_flops [`num_switches_in_level(ii)-1:0] (
-        .*
+        .clk(clk),
+        .rst(rst)
     );
 
     noc_if #(
@@ -122,7 +128,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
         .A_W(A_W),
         .D_W(D_W)
     ) downwards_if_below_flops [`num_switches_in_level(ii)-1:0] (
-        .*
+        .clk(clk),
+        .rst(rst)
     );
 
     //Generation of flops between levels for better timing
@@ -133,7 +140,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
             .D_W(D_W),
             .LATENCY(INTERFACE_FLOPS)
         ) upwards_pipe (
-            .*,
+            .clk(clk),
+            .rst(rst),
             .from_tx(upwards_if_below_flops[jj]),
             .to_rx(  upwards_if_above_flops[jj])
         );
@@ -144,7 +152,8 @@ for (genvar ii = 0; ii < LEVELS; ++ii) begin : gen_levels
             .D_W(D_W),
             .LATENCY(INTERFACE_FLOPS)
         ) downwards_pipe (
-            .*,
+            .clk(clk),
+            .rst(rst),
             .from_tx(downwards_if_above_flops[jj]),
             .to_rx(  downwards_if_below_flops[jj])
         );
@@ -255,7 +264,8 @@ for (genvar ii = 0; ii < N; ++ii) begin : gen_leaf_flops
         .D_W(D_W),
         .LATENCY(INTERFACE_FLOPS)
     ) leaf_rx_pipe (
-        .*,
+        .clk(clk),
+        .rst(rst),
         .from_tx(leaf_rx[ii]),
         .to_rx(leaf_rx_above_flops[ii])
     );

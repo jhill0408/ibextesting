@@ -46,14 +46,8 @@ reset_handler:
   mv x30, x1
   mv x31, x1
 
-  csrr x5, mhartid # reading hart CSR to figure out which core we are on 
-
-  la x6, _stack_start  # getting start addr of core 0 (base)
-  li x7, 0xFF00        # size of stack for each core (assuming all core has same stack size)
-  mul x5, x5, x7       # finding offset
-  add x2, x6, x5       # adding offset to base to get correct stack start addr for each core
-
-
+  /* stack initilization */
+  la   x2, _stack_start
 
 _start:
   .global _start

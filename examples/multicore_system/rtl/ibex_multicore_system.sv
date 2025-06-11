@@ -68,8 +68,9 @@ module ibex_multicore_system (
     Timer
   } bus_device_e;
 
-  localparam int NrDevices = 3;
+
   localparam int NrHosts = CPUCount;
+  localparam int NrDevices = 3 * NrHosts;
 
 /*
   logic valid01;
@@ -141,15 +142,15 @@ endgenerate
   logic timer_irq;
 
   // host and device signals
-  logic           host_req    [NrHosts];
-  logic           host_gnt    [NrHosts];
-  logic [31:0]    host_addr   [NrHosts];
-  logic           host_we     [NrHosts];
-  logic [ 3:0]    host_be     [NrHosts];
-  logic [31:0]    host_wdata  [NrHosts];
-  logic           host_rvalid [NrHosts];
-  logic [31:0]    host_rdata  [NrHosts];
-  logic           host_err    [NrHosts];
+  logic           host_req    [NrHosts][1];
+  logic           host_gnt    [NrHosts][1];
+  logic [31:0]    host_addr   [NrHosts][1];
+  logic           host_we     [NrHosts][1];
+  logic [ 3:0]    host_be     [NrHosts][1];
+  logic [31:0]    host_wdata  [NrHosts][1];
+  logic           host_rvalid [NrHosts][1];
+  logic [31:0]    host_rdata  [NrHosts][1];
+  logic           host_err    [NrHosts][1];
 
 /*
   logic [6:0]     data_rdata_intg1;
@@ -162,15 +163,16 @@ endgenerate
   logic [NrHosts - 1 :0] [6:0] instr_rdata_intg;
 
   // devices (slaves)
-  logic           device_req    [NrDevices];
-  logic [31:0]    device_addr   [NrDevices];
-  logic           device_we     [NrDevices];
-  logic [ 3:0]    device_be     [NrDevices];
-  logic [31:0]    device_wdata  [NrDevices];
-  logic           device_rvalid [NrDevices];
-  logic [31:0]    device_rdata  [NrDevices];
-  logic           device_err    [NrDevices];
+  logic           device_req    [NrHosts][NrDevices/NrHosts];
+  logic [31:0]    device_addr   [NrHosts][NrDevices/NrHosts];
+  logic           device_we     [NrHosts][NrDevices/NrHosts];
+  logic [ 3:0]    device_be     [NrHosts][NrDevices/NrHosts];
+  logic [31:0]    device_wdata  [NrHosts][NrDevices/NrHosts];
+  logic           device_rvalid [NrHosts][NrDevices/NrHosts];
+  logic [31:0]    device_rdata  [NrHosts][NrDevices/NrHosts];
+  logic           device_err    [NrHosts][NrDevices/NrHosts];
 
+/* verilator lint_off UNUSEDSIGNAL */
   // wires for instr bus
   logic           ram_instr_req [1];
   logic [31:0]    ram_instr_addr [1]  ;
@@ -180,18 +182,7 @@ endgenerate
   logic           ram_instr_rvalid [1];
   logic [31:0]    ram_instr_rdata [1] ;
   //logic           ram_instr_err  [1]  ;
-
-  // Device address mapping
-  logic [31:0] cfg_device_addr_base [NrDevices];
-  logic [31:0] cfg_device_addr_mask [NrDevices];
-  assign cfg_device_addr_base[Ram] = 32'h100000;
-  assign cfg_device_addr_mask[Ram] = ~32'hFFFFF; // 1 MB
-  //assign cfg_device_addr_base[Ram2] = 32'h300000;
-  //assign cfg_device_addr_mask[Ram2] = ~32'hFFFFF; // 1 MB
-  assign cfg_device_addr_base[SimCtrl] = 32'h20000;
-  assign cfg_device_addr_mask[SimCtrl] = ~32'h3FF; // 1 kB
-  assign cfg_device_addr_base[Timer] = 32'h30000;
-  assign cfg_device_addr_mask[Timer] = ~32'h3FF; // 1 kB
+  /* verilator lint_on UNUSEDSIGNAL */
 
   // Instruction fetch signals
   logic instr_req [NrHosts];
@@ -244,49 +235,18 @@ endgenerate
     end
   `endif
 
+  /*
+
   // Tie-off unused error signals
   assign device_err[Ram] = 1'b0;
   //assign device_err[Ram2] = 1'b0;
   assign device_err[SimCtrl] = 1'b0;
+  */
 
-  bus #(
-    .NrDevices    ( NrDevices ),
-    .NrHosts      ( NrHosts   ),
-    .DataWidth    ( 32        ),
-    .AddressWidth ( 32        )
-  ) u_bus1 (
-    .clk_i               (clk_sys),
-    .rst_ni              (rst_sys_n),
+  
 
-    .host_req_i          (host_req     ),
-    .host_gnt_o          (host_gnt     ),
-    .host_addr_i         (host_addr    ),
-    .host_we_i           (host_we      ),
-    .host_be_i           (host_be      ),
-    .host_wdata_i        (host_wdata   ),
-    .host_rvalid_o       (host_rvalid  ),
-    .host_rdata_o        (host_rdata   ),
-    .host_err_o          (host_err     ),
 
-    .device_req_o        (device_req   ),
-    .device_addr_o       (device_addr  ),
-    .device_we_o         (device_we    ),
-    .device_be_o         (device_be    ),
-    .device_wdata_o      (device_wdata ),
-    .device_rvalid_i     (device_rvalid),
-    .device_rdata_i      (device_rdata ),
-    .device_err_i        (device_err   ),
-
-    .cfg_device_addr_base,
-    .cfg_device_addr_mask
-  );
-
-  logic [31:0] bus2cfgbase [1];
-  logic [31:0] bus2cfgmask [1];
-
-  assign bus2cfgbase[0] = cfg_device_addr_base[Ram];
-  assign bus2cfgmask[0] = cfg_device_addr_mask[Ram];
-
+/*
   bus #(
     .NrDevices    ( 1 ),
     .NrHosts      ( NrHosts   ),
@@ -319,7 +279,7 @@ endgenerate
     .cfg_device_addr_mask(bus2cfgmask)
   );
 
-
+*/
   localparam NUM_CORES = NrHosts;
 
 noc_if #(.VC_W(1), .A_W($clog2(NUM_CORES)+1), .D_W(38))
@@ -478,6 +438,9 @@ endgenerate
 
 generate
   for (i = 0; i < NrHosts; i++) begin
+    initial begin
+      //$display("y not working :(  la la la %h", (32'h00200000 + i * (32'h100000)));
+    end
     ibex_top_tracing #(
       .SecureIbex      ( SecureIbex       ),
       .ICacheScramble  ( ICacheScramble   ),
@@ -497,12 +460,12 @@ generate
       .BranchPredictor ( BranchPredictor  ),
       .DbgTriggerEn    ( DbgTriggerEn     ),
       //.DmBaseAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
-      .DmBaseAddr(32'h00100000),
+      .DmBaseAddr(32'h00100000 + i * (32'h100000)),
       .DmAddrMask      ( 32'h00000003     ),
       //.DmHaltAddr      ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ), //
-      .DmHaltAddr(32'h00100000),
+      .DmHaltAddr(32'h00100000 + i * (32'h100000)),
       //.DmExceptionAddr ( 32'h00100000 + ((32'hFFFFF)/NrHosts)*i  ) //
-      .DmExceptionAddr(32'h00100000)
+      .DmExceptionAddr(32'h00100000 + i * (32'h100000))
     ) u_top (
       .clk_i                  (clk_sys),
       .rst_ni                 (rst_sys_n),
@@ -514,10 +477,10 @@ generate
       .hart_id_i              (i),
       // First instruction executed is at 0x0 + 0x80
       //.boot_addr_i            (32'h00100000 + (((32'hFFFFF) + 1)/NrHosts)*i), // technically includes 200000, one bad addr
-      .boot_addr_i(32'h00100000),
+      .boot_addr_i(32'h00100000 + i * (32'h100000)),
 
       .instr_req_o            (instr_req[i]),
-      .instr_gnt_i            (instr_gnt[i]),
+      .instr_gnt_i            (instr_gnt[i]), // assign gnt = req?? not just tie high??
       .instr_rvalid_i         (instr_rvalid[i]),
       .instr_addr_o           (instr_addr[i]),
       .instr_rdata_i          (instr_rdata[i]),
@@ -525,17 +488,17 @@ generate
       //.instr_err_i            (instr_err[i]),
       .instr_err_i (),
 
-      .data_req_o             (host_req[i]),
-      .data_gnt_i             (host_gnt[i]),
-      .data_rvalid_i          (host_rvalid[i]),
-      .data_we_o              (host_we[i]),
-      .data_be_o              (host_be[i]),
-      .data_addr_o            (host_addr[i]),
-      .data_wdata_o           (host_wdata[i]),
+      .data_req_o             (host_req[i][0]),
+      .data_gnt_i             (host_gnt[i][0]), // assign gnt = req?? not just high??
+      .data_rvalid_i          (host_rvalid[i][0]),
+      .data_we_o              (host_we[i][0]),
+      .data_be_o              (host_be[i][0]),
+      .data_addr_o            (host_addr[i][0]),
+      .data_wdata_o           (host_wdata[i][0]),
       .data_wdata_intg_o      (),
-      .data_rdata_i           (host_rdata[i]),
+      .data_rdata_i           (host_rdata[i][0]),
       .data_rdata_intg_i      (data_rdata_intg[i]),
-      .data_err_i             (host_err[i]),
+      .data_err_i             (host_err[i][0]),
       .input_valid(valid_i[i]),
       .input_addr(addr_i[i]),
       .input_data(data_i[i]),
@@ -746,6 +709,143 @@ endgenerate
     );
     */
 
+    generate
+      for (i = 0; i < NrHosts; i++) begin : gen_rams
+
+      
+  // Device address mapping
+  logic [31:0] cfg_device_addr_base [NrDevices/NrHosts];
+  logic [31:0] cfg_device_addr_mask [NrDevices/NrHosts];
+  assign cfg_device_addr_base[0] = 32'h100000 + i * ('h100000);
+  assign cfg_device_addr_mask[0] = ~32'hFFFFF; // 1 MB
+  //assign cfg_device_addr_base[Ram2] = 32'h300000;
+  //assign cfg_device_addr_mask[Ram2] = ~32'hFFFFF; // 1 MB
+  assign cfg_device_addr_base[1] = 32'h20000;
+  assign cfg_device_addr_mask[1] = ~32'h3FF; // 1 kB
+  assign cfg_device_addr_base[2] = 32'h30000;
+  assign cfg_device_addr_mask[2] = ~32'h3FF; // 1 kB
+
+       ram_2p #(
+      .Depth(1024*1024/4),
+      .MemInitFile(SRAMInitFile)
+    ) u_ram (
+      .clk_i       (clk_sys),
+      .rst_ni      (rst_sys_n),
+
+      .a_req_i     (device_req[i][0]),
+      .a_we_i      (device_we[i][0]),
+      .a_be_i      (device_be[i][0]),
+      .a_addr_i    (device_addr[i][0]),
+      .a_wdata_i   (device_wdata[i][0]),
+      .a_rvalid_o  (device_rvalid[i][0]),
+      .a_rdata_o   (device_rdata[i][0]),
+
+      .b_req_i     (instr_req[i]), // need to find way to figure this out
+      .b_we_i      (1'b0),
+      .b_be_i      (4'b0),
+      .b_addr_i    (instr_addr[i]),
+      .b_wdata_i   (32'b0),
+      .b_rvalid_o  (instr_rvalid[i]),
+      .b_rdata_o   (instr_rdata[i])
+    );
+
+    localparam string name = (
+      i == 0 ? "core0.log" :
+      i == 1 ? "core1.log" :
+      i == 2 ? "core2.log" :
+      i == 3 ? "core3.log" :
+               "invalid.log"
+    );
+
+      simulator_ctrl #(
+    .LogName(name)
+    ) u_simulator_ctrl (
+      .clk_i     (clk_sys),
+      .rst_ni    (rst_sys_n),
+
+      .req_i     (device_req[i][1]),
+      .we_i      (device_we[i][1]),
+      .be_i      (device_be[i][1]),
+      .addr_i    (device_addr[i][1]),
+      .wdata_i   (device_wdata[i][1]),
+      .rvalid_o  (device_rvalid[i][1]),
+      .rdata_o   (device_rdata[i][1])
+    );
+
+if (i == 0) begin : gen_core0_timer_irq
+  timer #(
+    .DataWidth    (32),
+    .AddressWidth (32)
+    ) u_timer (
+      .clk_i          (clk_sys),
+      .rst_ni         (rst_sys_n),
+
+      .timer_req_i    (device_req[i][2]),
+      .timer_we_i     (device_we[i][2]),
+      .timer_be_i     (device_be[i][2]),
+      .timer_addr_i   (device_addr[i][2]),
+      .timer_wdata_i  (device_wdata[i][2]),
+      .timer_rvalid_o (device_rvalid[i][2]),
+      .timer_rdata_o  (device_rdata[i][2]),
+      .timer_err_o    (device_err[i][2]),
+      .timer_intr_o   (timer_irq)
+    );
+end else begin : gen_no_timer_irq
+  timer #(
+    .DataWidth    (32),
+    .AddressWidth (32)
+    ) u_timer (
+      .clk_i          (clk_sys),
+      .rst_ni         (rst_sys_n),
+
+      .timer_req_i    (device_req[i][2]),
+      .timer_we_i     (device_we[i][2]),
+      .timer_be_i     (device_be[i][2]),
+      .timer_addr_i   (device_addr[i][2]),
+      .timer_wdata_i  (device_wdata[i][2]),
+      .timer_rvalid_o (device_rvalid[i][2]),
+      .timer_rdata_o  (device_rdata[i][2]),
+      .timer_err_o    (device_err[i][2]),
+      .timer_intr_o   ()
+    );
+end
+
+    bus #(
+    .NrDevices    ( NrDevices/NrHosts ),
+    .NrHosts      ( 1   ),
+    .DataWidth    ( 32        ),
+    .AddressWidth ( 32        )
+  ) u_bus1 (
+    .clk_i               (clk_sys),
+    .rst_ni              (rst_sys_n),
+
+    .host_req_i          (host_req[i]     ),
+    .host_gnt_o          (host_gnt[i]     ),
+    .host_addr_i         (host_addr[i]    ),
+    .host_we_i           (host_we[i]      ),
+    .host_be_i           (host_be[i]      ),
+    .host_wdata_i        (host_wdata[i]   ),
+    .host_rvalid_o       (host_rvalid[i]  ),
+    .host_rdata_o        (host_rdata[i]   ),
+    .host_err_o          (host_err[i]     ),
+
+    .device_req_o        (device_req[i]   ),
+    .device_addr_o       (device_addr[i]  ),
+    .device_we_o         (device_we[i]   ),
+    .device_be_o         (device_be[i]    ),
+    .device_wdata_o      (device_wdata[i] ),
+    .device_rvalid_i     (device_rvalid[i]),
+    .device_rdata_i      (device_rdata[i] ),
+    .device_err_i        (device_err[i]   ),
+
+    .cfg_device_addr_base,
+    .cfg_device_addr_mask
+  );
+  assign instr_gnt[i] = instr_req[i];
+      end
+    endgenerate
+
+/*
   // SRAM block for instruction and data storage
   ram_2p #(
       .Depth(1024*1024/4),
@@ -770,6 +870,7 @@ endgenerate
       .b_rvalid_o  (ram_instr_rvalid[0]),
       .b_rdata_o   (ram_instr_rdata[0])
     );
+    */
 
 /*
      ram_2p #(
@@ -797,38 +898,7 @@ endgenerate
     );
     */
 
-  simulator_ctrl #(
-    .LogName("ibex_multicore_system.log")
-    ) u_simulator_ctrl (
-      .clk_i     (clk_sys),
-      .rst_ni    (rst_sys_n),
 
-      .req_i     (device_req[SimCtrl]),
-      .we_i      (device_we[SimCtrl]),
-      .be_i      (device_be[SimCtrl]),
-      .addr_i    (device_addr[SimCtrl]),
-      .wdata_i   (device_wdata[SimCtrl]),
-      .rvalid_o  (device_rvalid[SimCtrl]),
-      .rdata_o   (device_rdata[SimCtrl])
-    );
-
-  timer #(
-    .DataWidth    (32),
-    .AddressWidth (32)
-    ) u_timer (
-      .clk_i          (clk_sys),
-      .rst_ni         (rst_sys_n),
-
-      .timer_req_i    (device_req[Timer]),
-      .timer_we_i     (device_we[Timer]),
-      .timer_be_i     (device_be[Timer]),
-      .timer_addr_i   (device_addr[Timer]),
-      .timer_wdata_i  (device_wdata[Timer]),
-      .timer_rvalid_o (device_rvalid[Timer]),
-      .timer_rdata_o  (device_rdata[Timer]),
-      .timer_err_o    (device_err[Timer]),
-      .timer_intr_o   (timer_irq)
-    );
 
   export "DPI-C" function mhpmcounter_num;
 

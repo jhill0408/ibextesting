@@ -47,7 +47,6 @@ module ibex_register_file_ff #(
   input logic                  use_mprf, // src mprf or gprf?
   /* verilator lint_off UNUSEDSIGNAL */
   input logic                  use_descriptor,
-  output logic                 descriptor_fifo_en,
   /* verilator lint_on UNUSEDSIGNAL */
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
@@ -61,9 +60,7 @@ module ibex_register_file_ff #(
   input logic [31:0] input_msg3,
   /* verilator lint_on UNUSEDSIGNAL */
   input logic [31:0] input_data,
-  input logic [4:0] input_addr,
-  output logic [31:0] descriptor_data_a,
-  output logic [9:0] descriptor_data_b
+  input logic [4:0] input_addr
 );
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
@@ -375,33 +372,6 @@ module ibex_register_file_ff #(
     assign oh_raddr_a_err = 1'b0;
     assign oh_raddr_b_err = 1'b0;
   end
-
-  logic [9:0] descriptor_data_b_r;
-  logic [4:0] start_addr;
-  logic [4:0] descriptor_len;
-
-  always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
-      descriptor_data_b_r <= 'b0;
-      start_addr <= 'b0;
-      descriptor_len <= 'b0;
-    end else begin
-      if (use_descriptor) begin
-        start_addr <= raddr_a_i; // descriptor data a is just assigned ot MPRF[start_addr] right?
-        descriptor_len <= rdata_b_o[31:27];
-        descriptor_data_b_r <= rdata_b_o[9:0];
-      end else begin
-        if (descriptor_len > 0) begin
-          descriptor_len <= descriptor_len - 1;
-          start_addr <= start_addr + 1;
-          descriptor_data_b_r <= descriptor_data_b_r + 1; // add roll over ability later
-        end
-      end
-    end
-  end
-  assign descriptor_data_a = rf_reg_msg[start_addr];
-  assign descriptor_data_b = descriptor_data_b_r;
-  assign descriptor_fifo_en = (descriptor_len > 0);
 
   assign err_o = oh_raddr_a_err || oh_raddr_b_err || oh_we_err;
 

@@ -198,9 +198,6 @@ module ibex_top import ibex_pkg::*; #(
   logic                        gprf_mprf_we;
   logic                        use_mprf;
   logic                        use_descriptor;
-  logic [31:0]                 descriptor_data_a;
-  logic [9:0]                  descriptor_data_b;
-  logic                        descriptor_fifo_en;
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc, rf_rdata_a_ecc_buf;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc, rf_rdata_b_ecc_buf;
@@ -504,10 +501,6 @@ module ibex_top import ibex_pkg::*; #(
       .gprf_mprf_we(gprf_mprf_we),
       .use_mprf(use_mprf),
       .use_descriptor(use_descriptor),
-      .descriptor_data_a(descriptor_data_a),
-      .descriptor_data_b(descriptor_data_b),
-      .descriptor_fifo_en(descriptor_fifo_en),
-
       .err_o    (rf_alert_major_internal),
 
       .input_addr(input_addr),
@@ -598,10 +591,10 @@ module ibex_top import ibex_pkg::*; #(
   logic noc_req_w_min1;
   //logic fifo_readmin1;
 
-  assign fifo_write = msg_en || descriptor_fifo_en;
+  assign fifo_write = msg_en;
   assign noc_req_w = (noc_req_cntr > 0);
   assign fifo_read = noc_gnt && noc_req; // would this be ok with extra latency of fifo?
-  assign fifo_indata = (descriptor_fifo_en) ? {1'b1, descriptor_data_b, descriptor_data_a} : {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
+  assign fifo_indata = {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
   assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
   //assign noc_req = noc_req_w || noc_req_w_min1;
   assign noc_req = noc_req_w;

@@ -2,19 +2,11 @@
 """
 csrmatrix.py
 ----------------------------------------------------------
-Generate a random integer CSR matrix A and vector x, then
+Generate a random integer CSR matrix A and vector x, then
 dump them into dataset.h for use in Verilator/firmware tests.
 
-* Default: 32 × 32, 10 % non‑zeros, int32 values in [‑4, 4]∖{0}
+* Default: 32 × 32, 10 % non‑zeros, int32 values in [‑4, 4]∖{0}
 * Edit the constants below or pass --rows / --cols / --density.
-
-Usage examples
---------------
-    # default 32×32, 10 % density
-    python3 csrmatrix.py
-
-    # custom size and density
-    python3 csrmatrix.py --rows 64 --cols 64 --density 0.05
 """
 
 import argparse, textwrap, pathlib, numpy as np
@@ -48,6 +40,11 @@ def c_array(name: str, arr: np.ndarray, width: int = 78) -> str:
 def write_header(A: sp.csr_matrix, x: np.ndarray):
     guard = "DATASET_H_"
     m, n  = A.shape
+
+    # --- new: column‑oriented view for fan‑out ----------------------------
+    A_csc = A.tocsc()                   # ← used only for s_index / invcol_index
+    # ---------------------------------------------------------------------
+
     lines = [
         f"#ifndef {guard}",
         f"#define {guard}",
@@ -63,6 +60,12 @@ def write_header(A: sp.csr_matrix, x: np.ndarray):
         "",
         c_array("A_indptr",  A.indptr),
         "",
+        # --- new arrays ---------------------------------------------------
+        c_array("invcol_index", A_csc.indices),
+        "",
+        c_array("s_index",      A_csc.indptr),
+        # ------------------------------------------------------------------
+        "",
         c_array("x",         x),
         "",
         f"#endif /* {guard} */",
@@ -77,8 +80,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Create dataset.h containing a random CSR matrix + vector",
     )
-    ap.add_argument("--rows",    type=int, default=10,  help="matrix rows")
-    ap.add_argument("--cols",    type=int, default=32,  help="matrix cols")
+    ap.add_argument("--rows",    type=int, default=8,  help="matrix rows")
+    ap.add_argument("--cols",    type=int, default=8,  help="matrix cols")
     ap.add_argument("--density", type=float, default=0.10,
                     help="fraction of non‑zeros (0–1)")
     ap.add_argument("--seed",    type=int, default=None,

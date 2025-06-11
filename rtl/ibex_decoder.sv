@@ -59,6 +59,7 @@ module ibex_decoder #(
   output logic                 rf_we_o,          // write enable for regfile
   output logic                 gprf_mprf_we,
   output logic                 use_mprf,
+  output logic                 use_descriptor,
   output logic [4:0]           rf_raddr_a_o,
   output logic [4:0]           rf_raddr_b_o,
   output logic [4:0]           rf_waddr_o,
@@ -222,6 +223,7 @@ module ibex_decoder #(
     rf_we                 = 1'b0;
     gprf_mprf_we          = 1'b0;
     use_mprf              = 1'b0;
+    use_descriptor        = 1'b0;
     rf_ren_a_o            = 1'b0;
     rf_ren_b_o            = 1'b0;
 
@@ -331,6 +333,7 @@ module ibex_decoder #(
         data_we_o          = 1'b0; // prolly dont need to write to memory
         msg_en             = 1'b1;
         use_mprf = instr[12];
+        use_descriptor = instr[13];
         data_type_o = 2'b00;
       end
 

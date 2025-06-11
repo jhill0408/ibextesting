@@ -1,4 +1,4 @@
-// Copyright lowRISC contributors.
+// Copyright lowRISC contributors. Add commentMore actions
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -13,8 +13,11 @@
 #include "verilator_memutil.h"
 #include "verilator_sim_ctrl.h"
 
-MulticoreSystem::MulticoreSystem(const char *ram_hier_path, int ram_size_words)
-    : _ram(ram_hier_path, ram_size_words, 4) {}
+MulticoreSystem::MulticoreSystem(const char *ram1_hier_path, int ram1_size_words, const char *ram2_hier_path, int ram2_size_words, const char *ram3_hier_path, int ram3_size_words, const char *ram4_hier_path, int ram4_size_words )
+    : _ram1(ram1_hier_path, ram1_size_words, 4),
+      _ram2(ram2_hier_path, ram2_size_words, 4),
+      _ram3(ram3_hier_path, ram3_size_words, 4),
+      _ram4(ram4_hier_path, ram4_size_words, 4) {}
 
 int MulticoreSystem::Main(int argc, char **argv) {
   bool exit_app;
@@ -72,8 +75,18 @@ int MulticoreSystem::Setup(int argc, char **argv, bool &exit_app) {
   simctrl.SetTop(&_top, &_top.IO_CLK, &_top.IO_RST_N,
                  VerilatorSimCtrlFlags::ResetPolarityNegative);
 
-
-  _memutil.RegisterMemoryArea("ram", 0x00100000, &_ram);
+  std::cout << "RAM1" << std::endl;
+  _memutil.RegisterMemoryArea("ram1", 0x00100000, &_ram1);
+  std::cout << _ram1.GetSizeBytes() << std::endl;
+  std::cout << "RAM2" << std::endl;
+  _memutil.RegisterMemoryArea("ram2", 0x00200000, &_ram2);
+  std::cout << _ram2.GetSizeBytes() << std::endl;
+  std::cout << "RAM3" << std::endl;
+  _memutil.RegisterMemoryArea("ram3", 0x00300000, &_ram3);
+  std::cout << _ram3.GetSizeBytes() << std::endl;
+  std::cout << "RAM4" << std::endl;
+  _memutil.RegisterMemoryArea("ram4", 0x00400000, &_ram4);
+  std::cout << _ram4.GetSizeBytes() << std::endl;
   simctrl.RegisterExtension(&_memutil);
 
   exit_app = false;

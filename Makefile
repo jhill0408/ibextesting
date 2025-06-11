@@ -122,6 +122,39 @@ python-lint:
 
 .PHONY: run_hello_test repeat_hello_test
 
+build_ram:
+	./gen_multicore_system_main.py $(NUM_RAMS) ./examples/multicore_system/ibex_multicore_system_main.cc
+	./gen_multicore_system_header.py $(NUM_RAMS) ./examples/multicore_system/ibex_multicore_system.h
+	./gen_multicore_system.py $(NUM_RAMS) ./examples/multicore_system/ibex_multicore_system.cc
+	make build_cores NUMRAMS=$(NUM_RAMS)
+	make build-multicore-system
+
+
+run_sim:
+	@set -e ; \
+	ARGS="" ; \
+	for i in $$(seq 1 $(NUM_RAMS)); do \
+		core_idx=$$(( i - 1 )); \
+		ARGS="$$ARGS --meminit=ram$$i,./examples/sw/simple_system/hello_test/core$${core_idx}.elf" ; \
+	done ; \
+	echo "Running with: $$ARGS" ; \
+	exec ./build/lowrisc_ibex_ibex_multicore_system_0/sim-verilator/Vibex_multicore_system -t $$ARGS
+
+do_sim:
+	make build_ram NUM_RAMS=$(NUM_RAMS)
+	make run_sim NUM_RAMS=$(NUM_RAMS)
+
+build_cores:
+	@set -e ; \
+	for i in $$(seq 0 $$(( $(NUM_RAMS) - 1 ))); do \
+		n=$$(( i + 1 )); \
+		./gen_ld.py $$n ./examples/sw/simple_system/common/link.ld ; \
+		$(MAKE) -C examples/sw/simple_system/hello_test ; \
+		mv ./examples/sw/simple_system/hello_test/hello_test.elf \
+		   ./examples/sw/simple_system/hello_test/core$$i.elf ; \
+	done
+
+
 run_hello_test:
 	python3 examples/sw/simple_system/hello_test/csrmatrix.py
 	python3 examples/sw/simple_system/hello_test/changecfile.py
