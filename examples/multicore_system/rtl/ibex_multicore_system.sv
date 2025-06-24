@@ -100,6 +100,7 @@ module ibex_multicore_system (
   logic [31:0] msg3_data_i [NrHosts];
   logic noc_req_o [NrHosts];
   logic noc_gnt_i [NrHosts];
+  logic use_mprf_o [NrHosts];
 
   logic [37:0] data_full_i [NrHosts];
   logic [37:0] data_full_o [NrHosts];
@@ -303,7 +304,7 @@ for (genvar i = 0; i < NUM_CORES; ++i) begin : g_cores
     assign leaf_rx_noc_if[i].packet.payload.last = 1'b0;
     assign leaf_rx_noc_if[i].vc_target = noc_req_o[i];
     assign noc_gnt_i[i] = leaf_rx_noc_if[i].vc_credit_gnt; 
-    assign leaf_tx_noc_if[i].vc_credit_gnt = 'b1; // maybe????
+    assign leaf_tx_noc_if[i].vc_credit_gnt = ~use_mprf_o[i]; // maybe????
 
     assign data_full_i[i][37:0] = leaf_tx_noc_if[i].packet.payload.data;
 
@@ -516,6 +517,7 @@ generate
       .msg3_data_i(msg3_data_i[i]),
       .noc_req(noc_req_o[i]),
       .noc_gnt(noc_gnt_i[i]),
+      .use_mprf_o(use_mprf_o[i]),
 
       .irq_software_i         (1'b0),
       .irq_timer_i            (timer_irq),

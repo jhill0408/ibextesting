@@ -229,6 +229,7 @@ module ibex_id_stage #(
   logic        controller_run;
   logic        stall_ld_hz;
   logic        stall_mem;
+  logic        stall_msg_ram;
   logic        stall_multdiv;
   logic        stall_branch;
   logic        stall_jump;
@@ -905,8 +906,17 @@ module ibex_id_stage #(
 
   // Stall ID/EX stage for reason that relates to instruction in ID/EX, update assertion below if
   // modifying this.
+  logic stall_msg_ram_rg;
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      stall_msg_ram_rg <= 'b0;
+    end else begin
+      stall_msg_ram_rg <= ~stall_msg_ram_rg & use_mprf;
+    end
+  end
+  assign stall_msg_ram = ~stall_msg_ram_rg & use_mprf;
   assign stall_id = stall_ld_hz | stall_mem | stall_multdiv | stall_jump | stall_branch |
-                      stall_alu;
+                      stall_alu | stall_msg_ram;
 
   // Generally illegal instructions have no reason to stall, however they must still stall waiting
   // for outstanding memory requests so exceptions related to them take priority over the illegal

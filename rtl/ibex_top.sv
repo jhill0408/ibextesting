@@ -88,6 +88,7 @@ module ibex_top import ibex_pkg::*; #(
   output logic [4:0] output_core,
   output logic noc_req,
   input logic noc_gnt,
+  output logic use_mprf_o,
   input logic input_valid,
   input logic [31:0] input_data,
   input logic [4:0] input_addr,
@@ -207,6 +208,11 @@ module ibex_top import ibex_pkg::*; #(
   logic [RegFileDataWidth-1:0] rf_msg1data_ecc;
   logic [RegFileDataWidth-1:0] rf_msg2data_ecc;
   logic [RegFileDataWidth-1:0] rf_msg3data_ecc;
+
+  // Core <-> MPRF signals
+  logic fetch_mprf_rd;
+  logic [4:0] fetch_mprf_a;
+  logic [4:0] fetch_mprf_b;
 
   logic msg_en;
   /* verilator lint_off UNUSEDSIGNAL */
@@ -328,6 +334,8 @@ module ibex_top import ibex_pkg::*; #(
    end
   end
 
+  assign use_mprf_o = use_mprf;
+
   ibex_core #(
     .PMPEnable        (PMPEnable),
     .PMPGranularity   (PMPGranularity),
@@ -402,6 +410,10 @@ module ibex_top import ibex_pkg::*; #(
     .msg_en(msg_en),
     .len_o(len_o),
     .mem_or_reg(mem_or_reg),
+
+    .fetch_mprf_rd(fetch_mprf_rd),
+    .fetch_mprf_a(fetch_mprf_a),
+    .fetch_mprf_b(fetch_mprf_b),
 
     .ic_tag_req_o      (ic_tag_req),
     .ic_tag_write_o    (ic_tag_write),
@@ -507,6 +519,10 @@ module ibex_top import ibex_pkg::*; #(
       .descriptor_data_a(descriptor_data_a),
       .descriptor_data_b(descriptor_data_b),
       .descriptor_fifo_en(descriptor_fifo_en),
+
+      .fetch_mprf_rd(fetch_mprf_rd),
+      .fetch_mprf_a(fetch_mprf_a),
+      .fetch_mprf_b(fetch_mprf_b),
 
       .err_o    (rf_alert_major_internal),
 

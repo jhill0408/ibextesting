@@ -38,6 +38,13 @@ module ibex_register_file_ff #(
   input  logic [4:0]           raddr_b_i,
   output logic [DataWidth-1:0] rdata_b_o,
 
+  //MPRF
+/* verilator lint_off UNUSEDSIGNAL */
+  input logic                 fetch_mprf_rd,
+  input logic [4:0]           fetch_mprf_a,
+  input logic [4:0]           fetch_mprf_b,
+  /* verilator lint_on UNUSEDSIGNAL */
+
 
   // Write port W1
   input  logic [4:0]           waddr_a_i,
@@ -205,6 +212,82 @@ module ibex_register_file_ff #(
 
   end
 
+// order of priority: reading from MPRF (sending over noc/writing to gprf) (to prevent cpu stall), gprf to mprf write (to prevent cpu stall), reading from noc, descriptor sends
+// if I add option to read addr from gprf, i dont think will ever have issue of contention over ports? I think will only have contention if I try to do 1/2 & 3 & 4 at same time if this is the case.
+
+/* verilator lint_off UNUSEDSIGNAL */
+/* verilator lint_off WIDTHEXPAND */
+logic a_re, b_re, a_we, b_we;
+logic [31:0] a_wdata, b_wdata, a_rdata, b_rdata;
+logic [4:0] a_addr, b_addr;
+
+assign a_re = use_mprf;
+assign b_re = use_mprf;
+assign a_we = (use_mprf) ? 1'b0 : gprf_mprf_we;
+assign b_we = (use_mprf) ? 1'b0 : input_valid;
+assign a_wdata = wdata_a_i;
+assign b_wdata = input_data;
+assign a_addr = (a_we) ? waddr_a_i : raddr_a_i;
+assign b_addr = (b_we) ? input_addr : raddr_b_i;
+
+/*
+logic [31:0] mprf [511:0];
+
+initial begin
+  for (i = 0; i < 512; i++) begin
+    mprf[i] <= 'b0;
+  end
+end
+
+always_ff @(posedge clk_i or negedge rst_ni) begin
+  if (!rst_ni) begin
+    for (i = 0; i < 512; i++) begin
+      mprf[i] <= 'b0;
+    end
+  end else begin
+    if (use_mprf) begin
+      a_rdata <= 
+    end else begin
+    end
+  end
+end
+*/
+
+       ram_2p #(
+      .Depth(512),
+    ) u_ram (
+      .clk_i       (clk_i),
+      .rst_ni      (rst_ni),
+
+      .a_req_i     (a_we | a_re),
+      .a_we_i      (a_we),
+      .a_be_i      (4'b1111),
+      .a_addr_i    (a_addr<<2),
+      .a_wdata_i   (a_wdata),
+      .a_rvalid_o  (),
+      .a_rdata_o   (a_rdata),
+
+      .b_req_i     (b_we | b_re), // need to find way to figure this out
+      .b_we_i      (b_we),
+      .b_be_i      (4'b1111),
+      .b_addr_i    (b_addr<<2),
+      .b_wdata_i   (b_wdata),
+      .b_rvalid_o  (),
+      .b_rdata_o   (b_rdata)
+    );
+
+
+/* verilator lint_on WIDTHEXPAND */
+/* verilator lint_off UNUSEDSIGNAL */
+
+
+
+
+
+
+
+
+
 
   // With dummy instructions enabled, R0 behaves as a real register but will always return 0 for
   // real instructions.
@@ -367,8 +450,8 @@ module ibex_register_file_ff #(
       .out_o (rdata_b_o)
     );
   end else begin : gen_no_rdata_mux_check
-    assign rdata_a_o = (use_mprf) ? rf_reg_msg[raddr_a_i] : rf_reg[raddr_a_i];
-    assign rdata_b_o = (use_mprf) ? rf_reg_msg[raddr_b_i] : rf_reg[raddr_b_i];
+    assign rdata_a_o = (use_mprf) ? a_rdata : rf_reg[raddr_a_i];
+    assign rdata_b_o = (use_mprf) ? b_rdata : rf_reg[raddr_b_i];
     assign rdata_msg1_o = rf_reg[raddr_a_i+1];
     assign rdata_msg2_o = rf_reg[raddr_a_i+2];
     assign rdata_msg3_o = rf_reg[raddr_a_i+3];

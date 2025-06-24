@@ -82,6 +82,11 @@ module ibex_if_stage import ibex_pkg::*; #(
   input  logic                        pmp_err_if_i,
   input  logic                        pmp_err_if_plus2_i,
 
+  // output for mprf
+  output logic                        fetch_mprf_rd,
+  output logic [4:0]                  fetch_mprf_a,
+  output logic [4:0]                  fetch_mprf_b,
+
   // control signals
   input  logic                        instr_valid_clear_i,      // clear instr valid bit in IF-ID
   input  logic                        pc_set_i,                 // set the PC to a new value
@@ -179,6 +184,10 @@ module ibex_if_stage import ibex_pkg::*; #(
   assign unused_csr_mtvec = csr_mtvec_i[7:0];
 
   assign unused_exc_cause = |{exc_cause.irq_ext, exc_cause.irq_int};
+
+  assign fetch_mprf_rd = (if_instr_rdata[3:0] == 4'hB) && if_instr_rdata[12];
+  assign fetch_mprf_a = if_instr_rdata[19:15];
+  assign fetch_mprf_b = if_instr_rdata[24:20];
 
   // exception PC selection mux
   always_comb begin : exc_pc_mux

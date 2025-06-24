@@ -96,6 +96,11 @@ module ibex_core import ibex_pkg::*; #(
   output logic [1:0] len_o,
   output logic mem_or_reg,
 
+  // MPRF
+  output logic        fetch_mprf_rd,
+  output logic [4:0]  fetch_mprf_a,
+  output logic [4:0]  fetch_mprf_b,
+
   // RAMs interface
   output logic [IC_NUM_WAYS-1:0]       ic_tag_req_o,
   output logic                         ic_tag_write_o,
@@ -266,6 +271,8 @@ module ibex_core import ibex_pkg::*; #(
   logic        rf_we_id;
   logic        rf_rd_a_wb_match;
   logic        rf_rd_b_wb_match;
+
+
 
   // ALU Control
   alu_op_e     alu_operator_ex;
@@ -485,6 +492,11 @@ module ibex_core import ibex_pkg::*; #(
     .pc_id_o                 (pc_id),
     .pmp_err_if_i            (pmp_req_err[PMP_I]),
     .pmp_err_if_plus2_i      (pmp_req_err[PMP_I2]),
+
+    //output to mprf
+    .fetch_mprf_rd           (fetch_mprf_rd),
+    .fetch_mprf_a            (fetch_mprf_a),
+    .fetch_mprf_b            (fetch_mprf_b),
 
     // control signals
     .instr_valid_clear_i   (instr_valid_clear),
