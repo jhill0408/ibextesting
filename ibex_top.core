@@ -25,6 +25,7 @@ filesets:
       - rtl/ibex_lockstep.sv
       - rtl/ibex_top.sv
       - rtl/fifo1.sv
+      - rtl/descriptor.sv
     file_type: systemVerilogSource
 
   files_lint_verilator:

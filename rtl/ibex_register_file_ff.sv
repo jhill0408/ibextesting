@@ -29,6 +29,8 @@ module ibex_register_file_ff #(
   //Read port R1
   input  logic [4:0]           raddr_a_i,
   output logic [DataWidth-1:0] rdata_a_o,
+  input logic                  descriptor_rd_en,
+  input logic [4:0]            descriptor_mprf_addr,
 
   output logic [DataWidth-1:0] rdata_msg1_o,
   output logic [DataWidth-1:0] rdata_msg2_o,
@@ -44,6 +46,7 @@ module ibex_register_file_ff #(
   input logic [4:0]           fetch_mprf_a,
   input logic [4:0]           fetch_mprf_b,
   /* verilator lint_on UNUSEDSIGNAL */
+  output logic [31:0]         descriptor_out,
 
 
   // Write port W1
@@ -54,7 +57,9 @@ module ibex_register_file_ff #(
   input logic                  use_mprf, // src mprf or gprf?
   /* verilator lint_off UNUSEDSIGNAL */
   input logic                  use_descriptor,
+  /* verilator lint_off UNDRIVEN */
   output logic                 descriptor_fifo_en,
+  /* verilator lint_on UNDRIVEN */
   /* verilator lint_on UNUSEDSIGNAL */
 
   // This indicates whether spurious WE or non-one-hot encoded raddr are detected.
@@ -69,8 +74,10 @@ module ibex_register_file_ff #(
   /* verilator lint_on UNUSEDSIGNAL */
   input logic [31:0] input_data,
   input logic [4:0] input_addr,
+  /* verilator lint_off UNDRIVEN */
   output logic [31:0] descriptor_data_a,
   output logic [9:0] descriptor_data_b
+  /* verilator lint_on UNDRIVEN */
 );
 
   localparam int unsigned ADDR_WIDTH = RV32E ? 4 : 5;
@@ -221,37 +228,16 @@ logic a_re, b_re, a_we, b_we;
 logic [31:0] a_wdata, b_wdata, a_rdata, b_rdata;
 logic [4:0] a_addr, b_addr;
 
-assign a_re = use_mprf;
+assign a_re = use_mprf | (!gprf_mprf_we & descriptor_rd_en); // should heavily simplify this logic
 assign b_re = use_mprf;
 assign a_we = (use_mprf) ? 1'b0 : gprf_mprf_we;
 assign b_we = (use_mprf) ? 1'b0 : input_valid;
 assign a_wdata = wdata_a_i;
 assign b_wdata = input_data;
-assign a_addr = (a_we) ? waddr_a_i : raddr_a_i;
+assign a_addr = (a_we) ? waddr_a_i : (use_mprf) ? raddr_a_i : descriptor_mprf_addr;
 assign b_addr = (b_we) ? input_addr : raddr_b_i;
+assign descriptor_out = a_rdata;
 
-/*
-logic [31:0] mprf [511:0];
-
-initial begin
-  for (i = 0; i < 512; i++) begin
-    mprf[i] <= 'b0;
-  end
-end
-
-always_ff @(posedge clk_i or negedge rst_ni) begin
-  if (!rst_ni) begin
-    for (i = 0; i < 512; i++) begin
-      mprf[i] <= 'b0;
-    end
-  end else begin
-    if (use_mprf) begin
-      a_rdata <= 
-    end else begin
-    end
-  end
-end
-*/
 
        ram_2p #(
       .Depth(512),
@@ -459,6 +445,9 @@ end
     assign oh_raddr_b_err = 1'b0;
   end
 
+
+  /*
+
   logic [9:0] descriptor_data_b_r;
   logic [4:0] start_addr;
   logic [4:0] descriptor_len;
@@ -485,6 +474,7 @@ end
   assign descriptor_data_a = rf_reg_msg[start_addr];
   assign descriptor_data_b = descriptor_data_b_r;
   assign descriptor_fifo_en = (descriptor_len > 0);
+  */
 
   assign err_o = oh_raddr_a_err || oh_raddr_b_err || oh_we_err;
 

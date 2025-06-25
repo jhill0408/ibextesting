@@ -202,6 +202,7 @@ module ibex_top import ibex_pkg::*; #(
   logic [31:0]                 descriptor_data_a;
   logic [9:0]                  descriptor_data_b;
   logic                        descriptor_fifo_en;
+  logic [31:0]                 descriptor_data;
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
   logic [RegFileDataWidth-1:0] rf_rdata_a_ecc, rf_rdata_a_ecc_buf;
   logic [RegFileDataWidth-1:0] rf_rdata_b_ecc, rf_rdata_b_ecc_buf;
@@ -519,6 +520,9 @@ module ibex_top import ibex_pkg::*; #(
       .descriptor_data_a(descriptor_data_a),
       .descriptor_data_b(descriptor_data_b),
       .descriptor_fifo_en(descriptor_fifo_en),
+      .descriptor_rd_en(descriptor_mprf_rd_en),
+      .descriptor_mprf_addr(descriptor_mprf_addr),
+      .descriptor_out(descriptor_data),
 
       .fetch_mprf_rd(fetch_mprf_rd),
       .fetch_mprf_a(fetch_mprf_a),
@@ -591,6 +595,45 @@ module ibex_top import ibex_pkg::*; #(
       .err_o    (rf_alert_major_internal)
     );
   end
+
+
+/* verilator lint_off UNUSEDSIGNAL */
+logic descriptor_out_valid;
+logic descriptor_in_valid; //
+logic descriptor_allowed; //
+logic [9:0] descriptor_out_addr;
+logic [4:0] descriptor_mprf_addr;
+logic [31:0] descriptor_out_data;
+logic descriptor_mprf_rd_en;
+/* verilator lint_on UNUSEDSIGNAL */
+
+logic descriptor_in_valid_min1;
+assign descriptor_in_valid_min1 = descriptor_mprf_rd_en & descriptor_allowed;
+
+assign descriptor_allowed = !(use_mprf | gprf_mprf_we); // can improve this at the beginning of descriptor instr to lower 1 cycle latency, second cycle without stall this should be high but its low
+always_ff @(posedge clk or negedge rst_ni) begin
+  if (!rst_ni) begin
+    descriptor_in_valid <= 'b0;
+  end else begin
+    descriptor_in_valid <= descriptor_in_valid_min1;
+  end
+end
+
+descriptor #(
+) u_descriptor (
+  .clk(clk),
+  .rst_n(rst_ni),
+  .start(use_descriptor), // dynamic power cuz 1st cycle stall gives wrong data, but whatever i think
+  .start_addr(rf_raddr_a),
+  .in_data(descriptor_data),
+  .out_valid(descriptor_out_valid),
+  .out_addr(descriptor_out_addr),
+  .in_valid(descriptor_in_valid),
+  .descriptor_allowed(descriptor_allowed),
+  .mprf_addr(descriptor_mprf_addr),
+  .out_data(descriptor_out_data),
+  .mprf_rd_en(descriptor_mprf_rd_en)
+);
 
 
 
