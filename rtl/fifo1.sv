@@ -26,7 +26,7 @@ assign full = occup == (DEPTH-1) ? 1 : 0;
 assign empty = occup == 0 ? 1 : 0;
 //assign occup_o = occup;
 
-assign data_out = mem[rdaddr];
+assign data_out = (read) ? mem[rdaddr] : 'b0;
 
 always @(posedge clk or negedge rst) begin
     if (!rst) begin

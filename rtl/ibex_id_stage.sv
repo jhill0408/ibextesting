@@ -195,7 +195,9 @@ module ibex_id_stage #(
                                                         // access to finish before proceeding
   output logic                      perf_mul_wait_o,
   output logic                      perf_div_wait_o,
-  output logic                      instr_id_done_o
+  output logic                      instr_id_done_o,
+  output logic                      stall_id,
+  input logic                       stall_msg_fifo
 );
 
   import ibex_pkg::*;
@@ -233,7 +235,6 @@ module ibex_id_stage #(
   logic        stall_multdiv;
   logic        stall_branch;
   logic        stall_jump;
-  logic        stall_id;
   logic        stall_wb;
   logic        flush_id;
   logic        multicycle_done;
@@ -916,7 +917,7 @@ module ibex_id_stage #(
   end
   assign stall_msg_ram = ~stall_msg_ram_rg & use_mprf;
   assign stall_id = stall_ld_hz | stall_mem | stall_multdiv | stall_jump | stall_branch |
-                      stall_alu | stall_msg_ram;
+                      stall_alu | stall_msg_ram | stall_msg_fifo;
 
   // Generally illegal instructions have no reason to stall, however they must still stall waiting
   // for outstanding memory requests so exceptions related to them take priority over the illegal

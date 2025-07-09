@@ -254,6 +254,13 @@ module ibex_top import ibex_pkg::*; #(
   logic [LineSizeECC-1:0]      ic_data_wdata;
   logic [LineSizeECC-1:0]      ic_data_rdata [IC_NUM_WAYS];
   logic                        ic_scr_key_req;
+  // FIFO signals
+    logic fifo_read;
+  logic fifo_write;
+  logic [42:0] fifo_indata; // need valid signal in width cuz of FWFT i think
+  logic [42:0] fifo_outdata;
+  logic [$clog2(FIFODEPTH) - 1 :0] noc_req_cntr;
+  logic fifo_full;
   // Alert signals
   logic                        core_alert_major_internal, core_alert_major_bus, core_alert_minor;
   logic                        lockstep_alert_major_internal, lockstep_alert_major_bus;
@@ -352,6 +359,9 @@ module ibex_top import ibex_pkg::*; #(
 
   assign use_mprf_o = use_mprf;
 
+  logic stall_id;
+  logic stall_msg_fifo;
+
   ibex_core #(
     .PMPEnable        (PMPEnable),
     .PMPGranularity   (PMPGranularity),
@@ -426,6 +436,8 @@ module ibex_top import ibex_pkg::*; #(
     .msg_en(msg_en),
     .len_o(len_o),
     .mem_or_reg(mem_or_reg),
+    .stall_id(stall_id),
+    .stall_msg_fifo(stall_msg_fifo),
 
     .fetch_mprf_rd(fetch_mprf_rd),
     .fetch_mprf_a(fetch_mprf_a),
@@ -637,8 +649,9 @@ logic descriptor_mem_rvalid;
 assign descriptor_mem_rvalid = data_rvalid_i;
 logic descriptor_mem_gnt;
 assign descriptor_mem_gnt = data_gnt_i & !data_req_o_not_descriptor;
+logic descriptor_idle;
 descriptor #(
-) u_descriptor (
+) u_descriptor ( // need to add some idle signal or whatever to make sure descriptor waits for fifo to be empty before starting
   .clk(clk),
   .rst_n(rst_ni),
   .start(use_descriptor), // dynamic power cuz 1st cycle stall gives wrong data, but whatever i think
@@ -655,7 +668,8 @@ descriptor #(
   .mem_addr_o(data_addr_o_descriptor),
   .mem_rvalid(descriptor_mem_rvalid),
   .mem_data_i(data_rdata_i),
-  .mem_gnt(descriptor_mem_gnt) // NEEEED to and with signal that says its descriptor using memory or else can get bugs
+  .mem_gnt(descriptor_mem_gnt),
+  .idle(descriptor_idle)
 );
 
 
@@ -669,20 +683,16 @@ descriptor #(
 //  assign output_addr = rf_rdata_b_ecc[4:0];
 //  assign output_core = rf_rdata_b_ecc[9:5];
 
-  logic fifo_read;
-  logic fifo_write;
-  logic [42:0] fifo_indata; // output_valid | output_core | output_addr | output_data, do we need out_valid here tho? cant we just have outvalid = fifo_write?
-  logic [42:0] fifo_outdata;
-  logic [$clog2(FIFODEPTH) - 1 :0] noc_req_cntr;
+
     /* verilator lint_off UNUSEDSIGNAL */
 
   logic noc_req_w;
   logic noc_req_w_min1;
   //logic fifo_readmin1;
 
-  assign fifo_write = msg_en || descriptor_fifo_en;
+  assign fifo_write = (msg_en || descriptor_fifo_en) && !stall_id && !use_descriptor; // if stall_id causes issues with timing, can prolly use that stall_msg_ram instead
   assign noc_req_w = (noc_req_cntr > 0);
-  assign fifo_read = noc_gnt && noc_req; // would this be ok with extra latency of fifo?
+  assign fifo_read = noc_gnt && noc_req && descriptor_idle; // would this be ok with extra latency of fifo?
   assign fifo_indata = (descriptor_fifo_en) ? {1'b1, descriptor_data_b, descriptor_data_a} : {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
   assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
   //assign noc_req = noc_req_w || noc_req_w_min1;
@@ -701,7 +711,7 @@ end
   ) u_fifo ( // what should depth be?, addding fifo adds latency but should be fine right
     .clk(clk_i),
     .rst(rst_ni),
-    .full(),
+    .full(fifo_full),
     .empty(),
     .write(fifo_write),
     .read(fifo_read),
@@ -709,6 +719,8 @@ end
     .data_in(fifo_indata),
     .occup(noc_req_cntr)
   );
+
+  assign stall_msg_fifo = msg_en && fifo_full;
   
 
   ///////////////////////////////

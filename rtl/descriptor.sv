@@ -17,10 +17,11 @@ module descriptor #(
     output logic [31:0] mem_addr_o,
     input logic mem_rvalid,
     input logic mem_gnt,
-    input logic [31:0] mem_data_i
+    input logic [31:0] mem_data_i,
+    output logic idle
+
 );
 
-logic idle;
 logic [9:0] output_addr;
 logic [31:0] out_data_r;
 logic out_valid_r;

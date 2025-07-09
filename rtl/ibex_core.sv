@@ -95,6 +95,8 @@ module ibex_core import ibex_pkg::*; #(
   output logic msg_en,
   output logic [1:0] len_o,
   output logic mem_or_reg,
+  output logic stall_id,
+  input logic  stall_msg_fifo,
 
   // MPRF
   output logic        fetch_mprf_rd,
@@ -611,6 +613,8 @@ module ibex_core import ibex_pkg::*; #(
     // Stalls
     .ex_valid_i      (ex_valid),
     .lsu_resp_valid_i(lsu_resp_valid),
+    .stall_id(stall_id),
+    .stall_msg_fifo(stall_msg_fifo),
 
     .alu_operator_ex_o (alu_operator_ex),
     .alu_operand_a_ex_o(alu_operand_a_ex),
