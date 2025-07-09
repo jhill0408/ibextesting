@@ -12,7 +12,12 @@ module descriptor #(
     output logic [4:0]          mprf_addr,
     output logic                mprf_rd_en,
 
-    output logic [32-1:0]   out_data
+    output logic [32-1:0]   out_data,
+    output logic read_mem_o,
+    output logic [31:0] mem_addr_o,
+    input logic mem_rvalid,
+    input logic mem_gnt,
+    input logic [31:0] mem_data_i
 );
 
 logic idle;
@@ -33,12 +38,19 @@ logic descriptor_allowed_min1;
 logic mprf_rd_en_min1;
 /* verilator lint_on UNUSEDSIGNAL */
 logic input_not_descriptor;
+logic [31:0] mem_addr;
+logic read_mem;
+logic mem_mode;
+logic mem_was_granted;
+
+assign mem_addr_o = mem_addr;
+assign read_mem_o = read_mem;
 
 assign out_valid = out_valid_r & descriptor_allowed; // pretty sure my outvalid logic is wrong btw
 assign out_addr = output_addr;
 //assign mprf_addr =(start && startmin1) ? start_addr + 1 : descriptor_mprf_addr_r; // I think this would be useful if I make that fix to descriptor_allowed, also would have to do same thing to rd_en
 assign mprf_addr = (in_data[31:29] == 3'b001 && !input_not_descriptor) ? in_data[4:0] : descriptor_mprf_addr_r;
-assign mprf_rd_en = mprf_rd_en_r;
+assign mprf_rd_en = (in_data[31:29] == 3'b010) ? mem_rvalid : mprf_rd_en_r; // can just or them ig
 assign out_data = out_data_r;
   
 always_ff @(posedge clk or negedge rst_n) begin
@@ -57,11 +69,19 @@ always_ff @(posedge clk or negedge rst_n) begin
         descriptor_allowed_min1 <= 'b0;
         mprf_rd_en_min1 <= 'b0;
         input_not_descriptor <= 'b0;
+        mem_addr <= 'b0;
+        read_mem <= 'b0;
+        mem_mode <= 'b0;
+        mem_was_granted <= 'b0;
     end else begin
         startmin1 <= start;
         do_mprf_data_addr_min1 <= do_mprf_data_addr;
         descriptor_allowed_min1 <= descriptor_allowed;
         mprf_rd_en_min1 <= mprf_rd_en;
+
+        if (mem_gnt) begin
+            mem_was_granted <= 'b1;
+        end
         
         if (start && startmin1) begin
             idle <= 'b0;
@@ -76,9 +96,23 @@ always_ff @(posedge clk or negedge rst_n) begin
             output_addr <= output_addr + 1;
         end
         if (input_not_descriptor) begin
+            if (!mem_mode) begin
             out_data_r <= in_data;
             out_valid_r <= 1'b1;
             input_not_descriptor <= 1'b0;
+            end else begin
+                read_mem <= !mem_gnt & read_mem;
+                if (mem_rvalid & mem_was_granted) begin // i think i dont need this mem_Was_granted signal
+                    out_data_r <= mem_data_i;
+                    out_valid_r <= 1'b1;
+                    input_not_descriptor <= 1'b0;
+                    read_mem <= 1'b0;
+                    descriptor_mprf_addr_r <= descriptor_mprf_addr_r + 1;
+                    mprf_rd_en_r <= 1'b1;
+                    mem_mode <= 1'b0;
+                end
+
+            end
         end
         if (!idle) begin
             if (in_valid && !ready_done && !input_not_descriptor) begin // can probably do a lot of this work combinationally if it doesnt affect max freq
@@ -123,6 +157,14 @@ always_ff @(posedge clk or negedge rst_n) begin
                         end
                         end
                     3'b010: begin
+                        if (descriptor_allowed) begin // experiment with diff fetch lengths and whatnot maybe
+                            out_valid_r <= 'b0;
+                            input_not_descriptor <= 'b1;
+                            mem_addr <= {3'b0, in_data[28:0]};
+                            read_mem <= 1'b1;
+                            mprf_rd_en_r <= 'b0;
+                            mem_mode <= 'b1;
+                        end
                         end
                     3'b011: begin
                         end

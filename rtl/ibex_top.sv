@@ -215,6 +215,21 @@ module ibex_top import ibex_pkg::*; #(
   logic [4:0] fetch_mprf_a;
   logic [4:0] fetch_mprf_b;
 
+  // Descriptor signals
+  logic data_req_o_descriptor, data_req_o_not_descriptor;
+  logic [3:0] data_be_o_descriptor, data_be_o_not_descriptor;
+  logic [31:0] data_addr_o_descriptor, data_addr_o_not_descriptor;
+  logic data_we_o_descriptor, data_we_o_not_descriptor;
+
+  assign data_req_o = (data_req_o_not_descriptor) ? data_req_o_not_descriptor : data_req_o_descriptor;
+  assign data_we_o = (data_req_o_not_descriptor) ? data_we_o_not_descriptor : data_we_o_descriptor;
+  assign data_be_o = (data_req_o_not_descriptor) ? data_be_o_not_descriptor : data_be_o_descriptor;
+  assign data_addr_o = (data_req_o_not_descriptor) ? data_addr_o_not_descriptor : data_addr_o_descriptor;
+
+  assign data_we_o_descriptor = 1'b0;
+  assign data_be_o_descriptor = 4'b1111;
+
+
   logic msg_en;
   /* verilator lint_off UNUSEDSIGNAL */
   logic mem_or_reg;
@@ -386,12 +401,12 @@ module ibex_top import ibex_pkg::*; #(
     .instr_rdata_i(instr_rdata_core),
     .instr_err_i,
 
-    .data_req_o,
+    .data_req_o(data_req_o_not_descriptor),
     .data_gnt_i,
     .data_rvalid_i,
-    .data_we_o,
-    .data_be_o,
-    .data_addr_o,
+    .data_we_o(data_we_o_not_descriptor),
+    .data_be_o(data_be_o_not_descriptor),
+    .data_addr_o(data_addr_o_not_descriptor),
     .data_wdata_o(data_wdata_core),
     .data_rdata_i(data_rdata_core),
     .data_err_i,
@@ -618,7 +633,10 @@ always_ff @(posedge clk or negedge rst_ni) begin
     descriptor_in_valid <= descriptor_in_valid_min1;
   end
 end
-
+logic descriptor_mem_rvalid;
+assign descriptor_mem_rvalid = data_rvalid_i;
+logic descriptor_mem_gnt;
+assign descriptor_mem_gnt = data_gnt_i & !data_req_o_not_descriptor;
 descriptor #(
 ) u_descriptor (
   .clk(clk),
@@ -632,7 +650,12 @@ descriptor #(
   .descriptor_allowed(descriptor_allowed),
   .mprf_addr(descriptor_mprf_addr),
   .out_data(descriptor_out_data),
-  .mprf_rd_en(descriptor_mprf_rd_en)
+  .mprf_rd_en(descriptor_mprf_rd_en),
+  .read_mem_o(data_req_o_descriptor),
+  .mem_addr_o(data_addr_o_descriptor),
+  .mem_rvalid(descriptor_mem_rvalid),
+  .mem_data_i(data_rdata_i),
+  .mem_gnt(descriptor_mem_gnt) // NEEEED to and with signal that says its descriptor using memory or else can get bugs
 );
 
 
