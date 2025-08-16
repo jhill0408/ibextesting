@@ -10,7 +10,7 @@
 #define CORE1_BASE 0x140000
 #define CORE2_BASE 0x180000
 #define CORE3_BASE 0x1C0000
-#define NUMCORES 32
+#define NUMCORES 4
 
 #define MOVE_GPRF_TO_MPRF(dest_reg, src_val)               \
     asm volatile (                                          \

@@ -54,7 +54,7 @@ module ibex_multicore_system (
   parameter bit                 ICacheECC                = 1'b0;
   parameter bit                 BranchPredictor          = 1'b0;
   parameter                     SRAMInitFile             = "";
-  parameter int unsigned        CPUCount                 = 32;
+  parameter int unsigned        CPUCount                 = 4;
 
   logic clk_sys = 1'b0, rst_sys_n;
 
@@ -289,7 +289,7 @@ endgenerate
 
   ///////////////////////////////////////// CREDIT BEGIN
 
-  
+  /*
 
 
 noc_if #(.VC_W(1), .A_W(16), .D_W(49))
@@ -345,7 +345,7 @@ end
     .root_rx(root_rx_noc_if),
     .root_tx(root_tx_noc_if)
   );
-  
+  */
   
 ////////////////////////////////////////////////// CREDIT END
 
@@ -390,7 +390,7 @@ end
 
 
 /////////////////////////// BACKPRESSURE BEGIN
-/*
+
   logic [64:0] peo [NrHosts-1:0];
   logic [64:0] pei [NrHosts-1:0];
   logic peo_l [NrHosts-1:0];
@@ -432,7 +432,7 @@ end
     .pei_r(pei_r),
     .pei_l()
 );
-*/
+
 
 ////////////////////////////////////////// BACKPRESSURE END
   
