@@ -21,6 +21,7 @@ module topology_t_binary_tree
 #(
     parameter N                 = DEFAULT_N,            //MUST BE A POWER OF 2
     parameter INTERFACE_FLOPS   = 0,                    //Number of flops between interfaces, useful to improve timing
+    parameter A_W = $clog2(N)+1,
     parameter VC_W              = DEFAULT_VC_W,
     parameter D_W               = DEFAULT_D_W,
     parameter VC_FIFO_DEPTH     = DEFAULT_VC_FIFO_DEPTH,//Actual depth is this - 1
@@ -43,7 +44,7 @@ module topology_t_binary_tree
  * Helpers
  * --------------------------------------------------------------------------------------------- */
 
-localparam A_W = $clog2(N) + 1;
+//localparam A_W = $clog2(N) + 1;
 
 localparam LEVELS = $clog2(N);
 `define num_switches_in_level(level) (2 ** (LEVELS - level - 1))

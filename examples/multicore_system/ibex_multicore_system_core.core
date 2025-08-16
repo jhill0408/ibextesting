@@ -13,6 +13,8 @@ filesets:
       - ../../noc/includes/system.h: { file_type: systemVerilogSource, is_include_file: true}
       - ../../noc/includes/mux.h: { file_type: systemVerilogSource, is_include_file: true}
       - ../../noc/includes/commands.h: { file_type: systemVerilogSource, is_include_file: true}
+      - rtl/ibex_multicore_system.sv
+####### Files for credit
       - ../../noc/rtl/common_pkg.sv
       - ../../noc/rtl/noc_if.sv
       - ../../noc/rtl/noc_pipe.sv
@@ -31,11 +33,31 @@ filesets:
       - ../../noc/rtl/t_switch.sv
       - ../../noc/rtl/topologies/topology_pi_rectangle.sv
       - ../../noc/rtl/topologies/topology_t_binary_tree.sv
-      - rtl/ibex_multicore_system.sv
-    include_globs:
-      - ../../noc/rtl/*.sv
-      - ../../noc/rtl/**/*.sv
-      - ../../noc/rtl/**/*.v
+######## Files for deflection
+#      - ../../noc2/rtl/deflection/bft.v
+#      - ../../noc2/rtl/deflection/mux.v
+#      - ../../noc2/rtl/deflection/pi_route_lean.v
+#      - ../../noc2/rtl/deflection/pi_route.v
+#      - ../../noc2/rtl/deflection/pi_switch.v 
+#      - ../../noc2/rtl/deflection/t_route_lean.v 
+#      - ../../noc2/rtl/deflection/t_route.v 
+#      - ../../noc2/rtl/deflection/t_switch.v 
+######## Files for backpressure
+#      - ../../noc2/rtl/backpressure/bft.v
+#      - ../../noc2/rtl/backpressure/bp.v
+#      - ../../noc2/rtl/backpressure/mux.v
+#      - ../../noc2/rtl/backpressure/pi_route.v
+#      - ../../noc2/rtl/backpressure/pi_switch_top.v
+#      - ../../noc2/rtl/backpressure/pi_switch.v 
+#      - ../../noc2/rtl/backpressure/t_route.v
+#      - ../../noc2/rtl/backpressure/t_switch_top.v 
+#      - ../../noc2/rtl/backpressure/t_switch.v
+#      - ../../noc2/rtl/mux.h 
+#      - ../../noc2/rtl/commands.h
+#      - ../../noc2/rtl/system.h
+
+
+
     file_type: systemVerilogSource
     include_dirs:
       - ../../noc/includes

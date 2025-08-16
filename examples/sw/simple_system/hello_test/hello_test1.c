@@ -10,7 +10,7 @@
 #define CORE1_BASE 0x140000
 #define CORE2_BASE 0x180000
 #define CORE3_BASE 0x1C0000
-#define NUMCORES 4
+#define NUMCORES 10
 
 #define MOVE_GPRF_TO_MPRF(dest_reg, src_val)               \
     asm volatile (                                          \
@@ -53,17 +53,22 @@ int main(int argc, char **argv) {
 
   int firstrow = M/NUMCORES * test4;
   int lastrow = (M/NUMCORES * (test4+1));
+  int remainder = M - (M/NUMCORES) * NUMCORES;
   int m;
-  int b[M/NUMCORES] = {0};
+  int b[M/NUMCORES + 1] = {0};
   int n;
+
+  if (test4 < remainder) {
   for (m=firstrow; m<lastrow; m++) {
     int edges = A_indptr[m+1] - A_indptr[m];
     for(n=0; n < edges; n++){
-        b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];
-        int baddr = NUMCORES-1;
+        b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
+    }
+
+    int baddr = NUMCORES-1;
         baddr = (baddr << 5);
         baddr = baddr + m + 1;
-        if (test4 != NUMCORES - 1) {
+        if (test4 != NUMCORES - 1) { // techincally dont need if statement, else neveer runs
             switch (m-firstrow+1) {
                 case 1: MOVE_GPRF_TO_MPRF(x1, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x16, baddr); SEND_MPRF(x1, x16); break;
                 case 2: MOVE_GPRF_TO_MPRF(x2, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x17, baddr); SEND_MPRF(x2, x17); break;
@@ -101,9 +106,73 @@ int main(int argc, char **argv) {
             }
 
         }
-    }
             
   }
+  m = (M/NUMCORES) * NUMCORES + test4;
+  int baddr = NUMCORES-1;
+  baddr = (baddr << 5);
+  baddr = baddr + m + 1;
+  int edges = A_indptr[m+1] - A_indptr[m];
+    for(n=0; n < edges; n++){
+        b[M/NUMCORES] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
+    }
+
+    MOVE_GPRF_TO_MPRF(x1, b[M/NUMCORES]); 
+    MOVE_GPRF_TO_MPRF(x16, baddr); 
+    SEND_MPRF(x1, x16);
+
+} else {
+    for (m=firstrow; m<lastrow; m++) {
+        int edges = A_indptr[m+1] - A_indptr[m];
+        for(n=0; n < edges; n++){
+            b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
+        }
+    
+        int baddr = NUMCORES-1;
+            baddr = (baddr << 5);
+            baddr = baddr + m + 1;
+            if (test4 != NUMCORES - 1) {
+                switch (m-firstrow+1) {
+                    case 1: MOVE_GPRF_TO_MPRF(x1, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x16, baddr); SEND_MPRF(x1, x16); break;
+                    case 2: MOVE_GPRF_TO_MPRF(x2, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x17, baddr); SEND_MPRF(x2, x17); break;
+                    case 3: MOVE_GPRF_TO_MPRF(x3, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x18, baddr); SEND_MPRF(x3, x18); break;
+                    case 4: MOVE_GPRF_TO_MPRF(x4, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x19, baddr); SEND_MPRF(x4, x19); break;
+                    case 5: MOVE_GPRF_TO_MPRF(x5, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x20, baddr); SEND_MPRF(x5, x20); break;
+                    case 6: MOVE_GPRF_TO_MPRF(x6, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x21, baddr); SEND_MPRF(x6, x21); break;
+                    case 7: MOVE_GPRF_TO_MPRF(x7, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x22, baddr); SEND_MPRF(x7, x22); break;
+                    case 8: MOVE_GPRF_TO_MPRF(x8, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x23, baddr); SEND_MPRF(x8, x23); break;
+                    case 9: MOVE_GPRF_TO_MPRF(x9, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x24, baddr); SEND_MPRF(x9, x24); break;
+                    case 10: MOVE_GPRF_TO_MPRF(x10, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x25, baddr); SEND_MPRF(x10, x25); break;
+                    case 11: MOVE_GPRF_TO_MPRF(x11, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x26, baddr); SEND_MPRF(x11, x26); break;
+                    case 12: MOVE_GPRF_TO_MPRF(x12, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x27, baddr); SEND_MPRF(x12, x27); break;
+                    case 13: MOVE_GPRF_TO_MPRF(x13, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x28, baddr); SEND_MPRF(x13, x28); break;
+                    case 14: MOVE_GPRF_TO_MPRF(x14, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x29, baddr); SEND_MPRF(x14, x29); break;
+                    case 15: MOVE_GPRF_TO_MPRF(x15, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x30, baddr); SEND_MPRF(x15, x30); break;
+                }
+            } else {
+                switch (m-firstrow+1) {
+                    case 1: MOVE_GPRF_TO_MPRF(x31, b[m-firstrow]); break;
+                    case 2: MOVE_GPRF_TO_MPRF(x30, b[m-firstrow]); break;
+                    case 3: MOVE_GPRF_TO_MPRF(x29, b[m-firstrow]); break;
+                    case 4: MOVE_GPRF_TO_MPRF(x28, b[m-firstrow]); break;
+                    case 5: MOVE_GPRF_TO_MPRF(x27, b[m-firstrow]); break;
+                    case 6: MOVE_GPRF_TO_MPRF(x26, b[m-firstrow]); break;
+                    case 7: MOVE_GPRF_TO_MPRF(x25, b[m-firstrow]); break;
+                    case 8: MOVE_GPRF_TO_MPRF(x24, b[m-firstrow]); break;
+                    case 9: MOVE_GPRF_TO_MPRF(x23, b[m-firstrow]); break;
+                    case 10: MOVE_GPRF_TO_MPRF(x22, b[m-firstrow]); break;
+                    case 11: MOVE_GPRF_TO_MPRF(x21, b[m-firstrow]); break;
+                    case 12: MOVE_GPRF_TO_MPRF(x20, b[m-firstrow]); break;
+                    case 13: MOVE_GPRF_TO_MPRF(x19, b[m-firstrow]); break;
+                    case 14: MOVE_GPRF_TO_MPRF(x18, b[m-firstrow]); break;
+                    case 15: MOVE_GPRF_TO_MPRF(x17, b[m-firstrow]); break;
+                }
+    
+            }
+                
+      }
+}
+  
 
   if (test4 == NUMCORES - 1) {
     int done = 0;
@@ -184,7 +253,7 @@ int main(int argc, char **argv) {
 
     }
 
-    for (i = (M/NUMCORES * (NUMCORES - 1)); i < M; i++) {
+    for (i = (M/NUMCORES * (NUMCORES - 1)); i < M/NUMCORES * NUMCORES; i++) {
         switch (i+1 - (M/NUMCORES * (NUMCORES-1))) {
             case 1: MOVE_MPRF_TO_GPRF(outt[i], x31); break;
             case 2: MOVE_MPRF_TO_GPRF(outt[i], x30); break;
@@ -202,6 +271,43 @@ int main(int argc, char **argv) {
 
     }
 
+    for (i = (M/NUMCORES * (NUMCORES)); i < M; i++) {
+        switch (i+1) {
+            case 1: MOVE_MPRF_TO_GPRF(outt[i], x1); break;
+            case 2: MOVE_MPRF_TO_GPRF(outt[i], x2); break;
+            case 3: MOVE_MPRF_TO_GPRF(outt[i], x3); break;
+            case 4: MOVE_MPRF_TO_GPRF(outt[i], x4); break;
+            case 5: MOVE_MPRF_TO_GPRF(outt[i], x5); break;
+            case 6: MOVE_MPRF_TO_GPRF(outt[i], x6); break;
+            case 7: MOVE_MPRF_TO_GPRF(outt[i], x7); break;
+            case 8: MOVE_MPRF_TO_GPRF(outt[i], x8); break;
+            case 9: MOVE_MPRF_TO_GPRF(outt[i], x9); break;
+            case 10: MOVE_MPRF_TO_GPRF(outt[i], x10); break;
+            case 11: MOVE_MPRF_TO_GPRF(outt[i], x11); break;
+            case 12: MOVE_MPRF_TO_GPRF(outt[i], x12); break;
+            case 13: MOVE_MPRF_TO_GPRF(outt[i], x13); break;
+            case 14: MOVE_MPRF_TO_GPRF(outt[i], x14); break;
+            case 15: MOVE_MPRF_TO_GPRF(outt[i], x15); break;
+            case 16: MOVE_MPRF_TO_GPRF(outt[i], x16); break;
+            case 17: MOVE_MPRF_TO_GPRF(outt[i], x17); break;
+            case 18: MOVE_MPRF_TO_GPRF(outt[i], x18); break;
+            case 19: MOVE_MPRF_TO_GPRF(outt[i], x19); break;
+            case 20: MOVE_MPRF_TO_GPRF(outt[i], x20); break;
+            case 21: MOVE_MPRF_TO_GPRF(outt[i], x21); break;
+            case 22: MOVE_MPRF_TO_GPRF(outt[i], x22); break;
+            case 23: MOVE_MPRF_TO_GPRF(outt[i], x23); break;
+            case 24: MOVE_MPRF_TO_GPRF(outt[i], x24); break;
+            case 25: MOVE_MPRF_TO_GPRF(outt[i], x25); break;
+            case 26: MOVE_MPRF_TO_GPRF(outt[i], x26); break;
+            case 27: MOVE_MPRF_TO_GPRF(outt[i], x27); break;
+            case 28: MOVE_MPRF_TO_GPRF(outt[i], x28); break;
+            case 29: MOVE_MPRF_TO_GPRF(outt[i], x29); break;
+            case 30: MOVE_MPRF_TO_GPRF(outt[i], x30); break;
+            case 31: MOVE_MPRF_TO_GPRF(outt[i], x31); break;
+        }
+
+    }
+
     for (i = 0; i < M; i++) {
         char testchar[32];
         snprintf(testchar, sizeof(testchar), "%d", outt[i]);
@@ -214,7 +320,7 @@ int main(int argc, char **argv) {
 
     int count = 4;
 
-    while (count < 501) {
+    while (count < 500) {
       count = count + 1;
       asm volatile("wfi");
 

@@ -175,3 +175,9 @@ repeat_hello_test:
 		$(MAKE) run_hello_test; \
 		count=`expr $$count + 1`; \
 	done
+
+prep_spmv:
+	python3 examples/sw/simple_system/hello_test/csrmatrix.py --rows $(SIZE) --cols $(SIZE)
+	python3 examples/sw/simple_system/hello_test/changecfile.py
+
+

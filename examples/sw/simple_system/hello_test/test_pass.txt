@@ -1,0 +1,146 @@
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+FAILED
+results_array: [-4, -6, -6, -7, -1, -1, 0, 6, -18, -2, -5, 4, 2, 0, 7, 0, 12, 2, -4, -7, 7, -18]
+log_array: []
+FAILED
+results_array: [12, -1, -1, 9, 1, 3, -14, 33]
+log_array: []
+FAILED
+results_array: [2, 13, -6, 0, 0, -5, -1, -12]
+log_array: []
+FAILED
+results_array: [-3, 9, -6, 16, -8, -3, 0, -15]
+log_array: []
+FAILED
+results_array: [9, 8, -19, -9, 3, 9, 0, -21]
+log_array: []
+FAILED
+results_array: [9, 5, -3, 6, -6, 9, -8, -10]
+log_array: []
+FAILED
+results_array: [-13, -18, -14, -8, 8, 26, 0, 3]
+log_array: [-13, 0, -14, 0, 8, 0, 0, 3]
+FAILED
+results_array: [-13, -28, -4, -20, -4, 14, -4, 0]
+log_array: [-13, 0, 0, 0, 0, 0, -4, 0]
+FAILED
+results_array: [-12, -6, -11, 6, -9, 2, -12, -9]
+log_array: [-12, -6, -11, 6, -12, -6, -12, -9]
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+PASSED
+FAILED
+results_array: [-9, -1, 3, 3, 2, 0, -10]
+log_array: [0, -1, 0, 0, 0, 0, 0]
+FAILED
+results_array: [4, 4, 0, 8, 0, 0, -2, -6]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [-8, 0, 0, 0, 4, 12, 4, 8]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [1, 0, -16, 0, 0, 0, -20]
+log_array: [1, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [11, 0, -2, 0, 0, -8, 21, 0, 0, 10, -12, -6, -1, 2, -3, -5]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [-5, 10, 12, 11, 0, -6, 0, 6, -13, -3, 0, 5, 0, 6, -3]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [-4, 8, 3, -9, 15, 7, -12, 16, 12, 0, 32, 28, -8, 0, -6]
+log_array: [-4, 0, 0, -9, 0, 0, 0, 0, 0, 0, 0, 0, -8, 0, 0]
+FAILED
+results_array: [-6, 0, 3, 6, 10, -6, 3, 3]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, 4, 2, -16, 23, 25, -2]
+log_array: [0, 0, 0, 0, 0, 25, 0]
+FAILED
+results_array: [-3, 9, -16, -24, 18, -6, 6]
+log_array: [0, 0, 0, -24, 18, -6, 0]
+FAILED
+results_array: [0, -1, 0, 6, 0, -8, 8, 6]
+log_array: [0, 0, 0, 0, 0, 0, 8, 6]
+FAILED
+results_array: [3, 0, -9, -8, -8, 0, 0, -11]
+log_array: [3, 0, 0, 0, 0, 0, 0, -11]
+FAILED
+results_array: [8, 0, 12, 0, 0, -8, -4, -3]
+log_array: [-4, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [3, 3, 4, 0, 0, 20, 0, 0]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, 0, -14, 0, 0, 5, 0, -2]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [8, 0, 0, 4, -1, 2, -4, 0]
+log_array: [-4, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [-12, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [-12, 0, 9, 0, 0, 0, 0, 0]
+PASSED
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [-12, -16, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 0, 0, 0, 0, 0, 0]
+FAILED
+results_array: [0, -8, 9, 0, 0, 0, -12, -16]
+log_array: [0, 0, 9, 0, 0, 0, 0, 0]

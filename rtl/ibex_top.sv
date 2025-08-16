@@ -84,14 +84,14 @@ module ibex_top import ibex_pkg::*; #(
   output logic [31:0] msg1_data,
   output logic [31:0] msg2_data,
   output logic [31:0] msg3_data,
-  output logic [4:0] output_addr,
-  output logic [4:0] output_core,
+  output logic [15:0] output_addr,
+  output logic [15:0] output_core,
   output logic noc_req,
   input logic noc_gnt,
   output logic use_mprf_o,
   input logic input_valid,
   input logic [31:0] input_data,
-  input logic [4:0] input_addr,
+  input logic [15:0] input_addr,
   input logic [1:0] len_i,
   input logic [31:0] msg1_data_i,
   input logic [31:0] msg2_data_i,
@@ -200,7 +200,7 @@ module ibex_top import ibex_pkg::*; #(
   logic                        use_mprf;
   logic                        use_descriptor;
   logic [31:0]                 descriptor_data_a;
-  logic [9:0]                  descriptor_data_b;
+  logic [31:0]                  descriptor_data_b;
   logic                        descriptor_fifo_en;
   logic [31:0]                 descriptor_data;
   logic [RegFileDataWidth-1:0] rf_wdata_wb_ecc;
@@ -257,8 +257,8 @@ module ibex_top import ibex_pkg::*; #(
   // FIFO signals
     logic fifo_read;
   logic fifo_write;
-  logic [42:0] fifo_indata; // need valid signal in width cuz of FWFT i think
-  logic [42:0] fifo_outdata;
+  logic [64:0] fifo_indata; // need valid signal in width cuz of FWFT i think
+  logic [64:0] fifo_outdata;
   logic [$clog2(FIFODEPTH) - 1 :0] noc_req_cntr;
   logic fifo_full;
   // Alert signals
@@ -517,6 +517,9 @@ module ibex_top import ibex_pkg::*; #(
   /////////////////////////////////
 
   logic rf_alert_major_internal;
+  logic input_valid_fifo;
+  logic [31:0] input_data_fifo;
+  logic [15:0] input_addr_fifo;
   if (RegFile == RegFileFF) begin : gen_regfile_ff
     ibex_register_file_ff #(
       .RV32E            (RV32E),
@@ -557,9 +560,9 @@ module ibex_top import ibex_pkg::*; #(
 
       .err_o    (rf_alert_major_internal),
 
-      .input_addr(input_addr),
-      .input_valid(input_valid),
-      .input_data(input_data),
+      .input_addr(input_addr_fifo),
+      .input_valid(input_valid_fifo),
+      .input_data(input_data_fifo),
       .rdata_msg1_o(rf_msg1data_ecc),
       .rdata_msg2_o(rf_msg2data_ecc),
       .rdata_msg3_o(rf_msg3data_ecc),
@@ -628,7 +631,7 @@ module ibex_top import ibex_pkg::*; #(
 logic descriptor_out_valid;
 logic descriptor_in_valid; //
 logic descriptor_allowed; //
-logic [9:0] descriptor_out_addr;
+logic [31:0] descriptor_out_addr;
 logic [4:0] descriptor_mprf_addr;
 logic [31:0] descriptor_out_data;
 logic descriptor_mprf_rd_en;
@@ -650,6 +653,32 @@ assign descriptor_mem_rvalid = data_rvalid_i;
 logic descriptor_mem_gnt;
 assign descriptor_mem_gnt = data_gnt_i & !data_req_o_not_descriptor;
 logic descriptor_idle;
+logic descriptor_valid;
+logic [$clog2(FIFODEPTH) - 1 :0] descriptor_empty_cntr;
+logic descriptor_pause;
+
+assign descriptor_pause = (|descriptor_empty_cntr);
+
+always_ff @(posedge clk or negedge rst_ni) begin
+  if (!rst_ni) begin
+    descriptor_valid <= 'b0;
+    descriptor_empty_cntr <= 'b0;
+  end else begin
+
+    if (descriptor_idle) begin // extra 1 cycle wasted, fix later
+      descriptor_valid <= 1'b0;
+    end
+        if (use_descriptor) begin
+      descriptor_valid <= 1'b1; // READ BELOW COMMENT ON LINE 663!)
+      descriptor_empty_cntr <= noc_req_cntr; //descriptor_empty_cntr - 1 if descriptor valid, and then make noc_req = (descriptor_valid) ? (descriptor_empty_cntr>0) : (noc_req_cntr>0); (also is a>0 or |a better?)
+    end
+    if (descriptor_valid) begin
+      if (noc_req && noc_gnt) begin
+        descriptor_empty_cntr <= (|descriptor_empty_cntr) ? descriptor_empty_cntr - 1 : 'b0;
+      end
+    end
+  end
+end
 descriptor #(
 ) u_descriptor ( // need to add some idle signal or whatever to make sure descriptor waits for fifo to be empty before starting
   .clk(clk),
@@ -669,8 +698,38 @@ descriptor #(
   .mem_rvalid(descriptor_mem_rvalid),
   .mem_data_i(data_rdata_i),
   .mem_gnt(descriptor_mem_gnt),
-  .idle(descriptor_idle)
+  .idle(descriptor_idle),
+  .pause(descriptor_pause)
 );
+
+
+
+
+      logic in_fifo_write;
+      logic in_fifo_read;
+        logic [$clog2(FIFODEPTH) - 1 :0] in_fifo_occup;
+        assign in_fifo_write = input_valid;
+        assign in_fifo_read = !use_mprf && (|in_fifo_occup);
+        logic [48:0] in_fifo_data_in;
+        logic [48:0] in_fifo_data_out;
+
+        assign in_fifo_data_in = {input_valid, input_addr, input_data};
+        assign {input_valid_fifo, input_addr_fifo, input_data_fifo} = in_fifo_data_out;
+
+
+  fifo1 #(.DEPTH(FIFODEPTH),
+  .D_W(49)
+  ) u_in_fifo ( // what should depth be?, addding fifo adds latency but should be fine right
+    .clk(clk_i),
+    .rst(rst_ni),
+    .full(),
+    .empty(),
+    .write(in_fifo_write),
+    .read(in_fifo_read),
+    .data_out(in_fifo_data_out),
+    .data_in(in_fifo_data_in),
+    .occup(in_fifo_occup)
+  );
 
 
 
@@ -691,10 +750,10 @@ descriptor #(
   //logic fifo_readmin1;
 
   assign fifo_write = (msg_en || descriptor_fifo_en) && !stall_id && !use_descriptor; // if stall_id causes issues with timing, can prolly use that stall_msg_ram instead
-  assign noc_req_w = (noc_req_cntr > 0);
-  assign fifo_read = noc_gnt && noc_req && descriptor_idle; // would this be ok with extra latency of fifo?
-  assign fifo_indata = (descriptor_fifo_en) ? {1'b1, descriptor_data_b, descriptor_data_a} : {msg_en, rf_rdata_b_ecc[9:0], rf_rdata_a_ecc};
-  assign {output_valid, output_core, output_addr, output_data} = fifo_outdata;
+  assign noc_req_w = (descriptor_valid) ? ((descriptor_empty_cntr>0)||descriptor_out_valid) : (noc_req_cntr>0);
+  assign fifo_read = noc_gnt && noc_req && !descriptor_out_valid; // would this be ok with extra latency of fifo?, if this is critical paty just change it up
+  assign fifo_indata = (descriptor_fifo_en) ? {1'b1, descriptor_data_b, descriptor_data_a} : {msg_en, rf_rdata_b_ecc, rf_rdata_a_ecc};
+  assign {output_valid, output_core, output_addr, output_data} = (descriptor_valid && !(|descriptor_empty_cntr)) ? {descriptor_out_valid,descriptor_out_addr,descriptor_out_data} : fifo_outdata;
   //assign noc_req = noc_req_w || noc_req_w_min1;
   assign noc_req = noc_req_w;
 
@@ -707,7 +766,7 @@ always @(posedge clk or negedge rst_ni) begin
 end
 
   fifo1 #(.DEPTH(FIFODEPTH),
-  .D_W(43)
+  .D_W(65)
   ) u_fifo ( // what should depth be?, addding fifo adds latency but should be fine right
     .clk(clk_i),
     .rst(rst_ni),

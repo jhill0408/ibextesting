@@ -7,7 +7,7 @@ module descriptor #(
     input  logic [4:0]          start_addr,
     input  logic [32-1:0]   in_data,
     output logic out_valid,
-    output logic [9:0] out_addr,
+    output logic [31:0] out_addr,
     input logic in_valid,
     input logic descriptor_allowed,
     output logic [4:0]          mprf_addr,
@@ -19,11 +19,12 @@ module descriptor #(
     input logic mem_rvalid,
     input logic mem_gnt,
     input logic [31:0] mem_data_i,
-    output logic idle
+    output logic idle,
+    input logic pause
 
 );
 
-logic [9:0] output_addr;
+logic [31:0] output_addr;
 logic [31:0] out_data_r;
 logic out_valid_r;
 logic ready_done;
@@ -82,6 +83,14 @@ always_ff @(posedge clk or negedge rst_n) begin
         length_cntr <= 'b0;
     end else begin
         startmin1 <= start;
+        if (start && startmin1) begin
+            idle <= 'b0;
+            output_addr <= in_data[31:0];
+            descriptor_mprf_addr_r <= start_addr + 1; // prolly a cycle too late?
+            mprf_rd_en_r <= 'b1;
+        end
+        if (!pause) begin
+        
         do_mprf_data_addr_min1 <= do_mprf_data_addr;
         descriptor_allowed_min1 <= descriptor_allowed;
         mprf_rd_en_min1 <= mprf_rd_en;
@@ -90,12 +99,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             mem_was_granted <= 'b1;
         end
         
-        if (start && startmin1) begin
-            idle <= 'b0;
-            output_addr <= in_data[9:0];
-            descriptor_mprf_addr_r <= start_addr + 1; // prolly a cycle too late?
-            mprf_rd_en_r <= 'b1;
-        end
+        
         if (mprf_rd_en && descriptor_allowed && !(!input_not_descriptor && in_data[31:29] == 3'b001)) begin
             if (!(input_not_descriptor)) begin
             descriptor_mprf_addr_r <= descriptor_mprf_addr_r + 1;
@@ -159,7 +163,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                             if (in_data == 32'b0) begin
                                 out_data_r <= 'b1;
                                 out_valid_r <= 'b1;
-                                output_addr <= {output_addr[9:5], 5'b11111};
+                                output_addr <= {output_addr[31:16], 16'b11111};
                                 ready_done <= 'b1;
                                 mprf_rd_en_r <= 'b0;
                             end else begin
@@ -243,6 +247,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             out_valid_r <= 'b0; // assign out_valid = out_valid_r & descriptor_allowed;
             out_data_r <= 'b0;
         end
+    end
     end
 end
 

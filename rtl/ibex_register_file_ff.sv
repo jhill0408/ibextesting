@@ -73,10 +73,10 @@ module ibex_register_file_ff #(
   input logic [31:0] input_msg3,
   /* verilator lint_on UNUSEDSIGNAL */
   input logic [31:0] input_data,
-  input logic [4:0] input_addr,
+  input logic [15:0] input_addr,
   /* verilator lint_off UNDRIVEN */
   output logic [31:0] descriptor_data_a,
-  output logic [9:0] descriptor_data_b
+  output logic [31:0] descriptor_data_b
   /* verilator lint_on UNDRIVEN */
 );
 
@@ -114,7 +114,7 @@ module ibex_register_file_ff #(
 
   always_comb begin : in_valid_decoder
     for (int unsigned i = 0; i < NUM_WORDS; i++) begin
-      in_valid_dec[i] = (input_addr == 5'(i)) ? input_valid : 1'b0;
+      in_valid_dec[i] = (input_addr == 16'(i)) ? input_valid : 1'b0;
     end
   end
 
@@ -226,7 +226,8 @@ module ibex_register_file_ff #(
 /* verilator lint_off WIDTHEXPAND */
 logic a_re, b_re, a_we, b_we;
 logic [31:0] a_wdata, b_wdata, a_rdata, b_rdata;
-logic [4:0] a_addr, b_addr;
+logic [15:0] a_addr;
+logic [15:0] b_addr;
 
 assign a_re = use_mprf | (!gprf_mprf_we & descriptor_rd_en); // should heavily simplify this logic
 assign b_re = use_mprf;
@@ -234,13 +235,13 @@ assign a_we = (use_mprf) ? 1'b0 : gprf_mprf_we;
 assign b_we = (use_mprf) ? 1'b0 : input_valid;
 assign a_wdata = wdata_a_i;
 assign b_wdata = input_data;
-assign a_addr = (a_we) ? waddr_a_i : (use_mprf) ? raddr_a_i : descriptor_mprf_addr;
-assign b_addr = (b_we) ? input_addr : raddr_b_i;
+assign a_addr = (a_we) ? waddr_a_i : (use_mprf) ? rf_reg[raddr_a_i][15:0] : descriptor_mprf_addr;
+assign b_addr = (b_we) ? input_addr : rf_reg[raddr_b_i][15:0];
 assign descriptor_out = a_rdata;
 
 
        ram_2p #(
-      .Depth(512),
+      .Depth(515),
     ) u_ram (
       .clk_i       (clk_i),
       .rst_ni      (rst_ni),

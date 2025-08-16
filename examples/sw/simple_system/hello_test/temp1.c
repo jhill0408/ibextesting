@@ -10,6 +10,32 @@
 #define CORE1_BASE 0x140000
 #define CORE2_BASE 0x180000
 #define CORE3_BASE 0x1C0000
+#define NUMCORES 4
+
+#define MOVE_GPRF_TO_MPRF(dest_reg, src_val)               \
+    asm volatile (                                          \
+        ".insn r 0x0B, 0x0, 0x00, " #dest_reg ", %0, x0"     \
+        :                                                   \
+        : "r"(src_val)                                      \
+    );
+
+    #define SEND_MPRF(dest_reg, addr_reg)                      \
+    asm volatile (                                                  \
+        ".insn r 0x2B, 0b001, 0x00, %0, " #dest_reg ", " #addr_reg   \
+        : "=r"(test3)                                              \
+        :                                                           \
+    );
+
+    #define MOVE_MPRF_TO_GPRF(dest_var, src_reg)                   \
+    asm volatile (                                             \
+        ".insn r 0x0B, 0b001, 0x00, %0, " #src_reg ", x0"       \
+        : "=r"(dest_var)                                        \
+        :                                                      \
+        :                                                      \
+    );
+
+
+
 
 
 
@@ -25,525 +51,323 @@ int main(int argc, char **argv) {
   int test3;
   asm volatile ("csrr %0, mhartid" : "=r"(test4));
 
-    if (test4 == 0) {
-        int firstrow = M/4 * test4;
-        int lastrow = (M/4 * (test4+1));
-        int m;
-        int b[M/4] = {0};
-        int n;
-        for (m=firstrow; m<lastrow; m++) {
-            int edges = A_indptr[m+1] - A_indptr[m];
-            for(n=0; n < edges; n++){
-                b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];
+  int firstrow = M/NUMCORES * test4;
+  int lastrow = (M/NUMCORES * (test4+1));
+  int remainder = M - (M/NUMCORES) * NUMCORES;
+  int m;
+  int b[M/NUMCORES + 1] = {0};
+  int n;
+
+  if (test4 < remainder) {
+  for (m=firstrow; m<lastrow; m++) {
+    int edges = A_indptr[m+1] - A_indptr[m];
+    for(n=0; n < edges; n++){
+        b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
+    }
+
+    int baddr = NUMCORES-1;
+        baddr = (baddr << 5);
+        baddr = baddr + m + 1;
+        if (test4 != NUMCORES - 1) { // techincally dont need if statement, else neveer runs
+            switch (m-firstrow+1) {
+                case 1: MOVE_GPRF_TO_MPRF(x1, b[m-firstrow]); break;
+                case 2: MOVE_GPRF_TO_MPRF(x2, b[m-firstrow]); break;
+                case 3: MOVE_GPRF_TO_MPRF(x3, b[m-firstrow]); break;
+                case 4: MOVE_GPRF_TO_MPRF(x4, b[m-firstrow]); break;
+                case 5: MOVE_GPRF_TO_MPRF(x5, b[m-firstrow]); break;
+                case 6: MOVE_GPRF_TO_MPRF(x6, b[m-firstrow]); break;
+                case 7: MOVE_GPRF_TO_MPRF(x7, b[m-firstrow]); break;
+                case 8: MOVE_GPRF_TO_MPRF(x8, b[m-firstrow]); break;
+                case 9: MOVE_GPRF_TO_MPRF(x9, b[m-firstrow]); break;
+                case 10: MOVE_GPRF_TO_MPRF(x10, b[m-firstrow]); break;
+                case 11: MOVE_GPRF_TO_MPRF(x11, b[m-firstrow]); break;
+                case 12: MOVE_GPRF_TO_MPRF(x12, b[m-firstrow]); break;
+                case 13: MOVE_GPRF_TO_MPRF(x13, b[m-firstrow]); break;
+                case 14: MOVE_GPRF_TO_MPRF(x14, b[m-firstrow]); break;
+                case 15: MOVE_GPRF_TO_MPRF(x15, b[m-firstrow]); break;
+            }
+
+            for (m=firstrow; m<lastrow; m++) {
+                int edges = s_index[m+1] - s_index[m];
+                for(n=0; n < edges; n++){
+                   int core_dest = invcol_index[s_index[m]+n];
+                   if (core_dest != test4) {
+                   core_dest = core_dest << 5;
+                   core_dest = core_dest + m + 1; // technically need to do % stuff, e.g. b[16] shoul dbe sent to x1  
+                   switch (m-firstrow+1) {
+                case 1: MOVE_GPRF_TO_MPRF(x16, core_dest); SEND_MPRF(x1, x16); break;
+                case 2: MOVE_GPRF_TO_MPRF(x17, core_dest); SEND_MPRF(x2, x17); break;
+                case 3: MOVE_GPRF_TO_MPRF(x18, core_dest); SEND_MPRF(x3, x18); break;
+                case 4: MOVE_GPRF_TO_MPRF(x19, core_dest); SEND_MPRF(x4, x19); break;
+                case 5: MOVE_GPRF_TO_MPRF(x20, core_dest); SEND_MPRF(x5, x20); break;
+                case 6: MOVE_GPRF_TO_MPRF(x21, core_dest); SEND_MPRF(x6, x21); break;
+                case 7: MOVE_GPRF_TO_MPRF(x22, core_dest); SEND_MPRF(x7, x22); break;
+                case 8: MOVE_GPRF_TO_MPRF(x23, core_dest); SEND_MPRF(x8, x23); break;
+                case 9: MOVE_GPRF_TO_MPRF(x24, core_dest); SEND_MPRF(x9, x24); break;
+                case 10: MOVE_GPRF_TO_MPRF(x25, core_dest); SEND_MPRF(x10, x25); break;
+                case 11: MOVE_GPRF_TO_MPRF(x26, core_dest); SEND_MPRF(x11, x26); break;
+                case 12: MOVE_GPRF_TO_MPRF(x27, core_dest); SEND_MPRF(x12, x27); break;
+                case 13: MOVE_GPRF_TO_MPRF(x28, core_dest); SEND_MPRF(x13, x28); break;
+                case 14: MOVE_GPRF_TO_MPRF(x29, core_dest); SEND_MPRF(x14, x29); break;
+                case 15: MOVE_GPRF_TO_MPRF(x30, core_dest); SEND_MPRF(x15, x30); break;
+            }   
+                   } 
+                }
             }
             
+        } else {
+            switch (m-firstrow+1) {
+                case 1: MOVE_GPRF_TO_MPRF(x31, b[m-firstrow]); break;
+                case 2: MOVE_GPRF_TO_MPRF(x30, b[m-firstrow]); break;
+                case 3: MOVE_GPRF_TO_MPRF(x29, b[m-firstrow]); break;
+                case 4: MOVE_GPRF_TO_MPRF(x28, b[m-firstrow]); break;
+                case 5: MOVE_GPRF_TO_MPRF(x27, b[m-firstrow]); break;
+                case 6: MOVE_GPRF_TO_MPRF(x26, b[m-firstrow]); break;
+                case 7: MOVE_GPRF_TO_MPRF(x25, b[m-firstrow]); break;
+                case 8: MOVE_GPRF_TO_MPRF(x24, b[m-firstrow]); break;
+                case 9: MOVE_GPRF_TO_MPRF(x23, b[m-firstrow]); break;
+                case 10: MOVE_GPRF_TO_MPRF(x22, b[m-firstrow]); break;
+                case 11: MOVE_GPRF_TO_MPRF(x21, b[m-firstrow]); break;
+                case 12: MOVE_GPRF_TO_MPRF(x20, b[m-firstrow]); break;
+                case 13: MOVE_GPRF_TO_MPRF(x19, b[m-firstrow]); break;
+                case 14: MOVE_GPRF_TO_MPRF(x18, b[m-firstrow]); break;
+                case 15: MOVE_GPRF_TO_MPRF(x17, b[m-firstrow]); break;
+            }
+
         }
+            
+  }
 
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
-            :
-            : "r"(b[0])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
-            :
-            : "r"(b[1])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
-            :
-            : "r"(b[2])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
-            :
-            : "r"(b[3])
-        ); // no clobber cuz modifying mprf
-
-        int b0_addr= 0b0001100001; // next try having a base addr and adding 1 each time
-        int b1_addr= 0b0001100010;
-        int b2_addr= 0b0001100011;
-        int b3_addr= 0b0001100100;
-
-        asm volatile (
-          ".insn r 0x0B, 0x0, 0x00, x5, %0, x0" // moving something in gprf to mprf[5]
-          :
-          : "r"(b0_addr)
-      ); // no clobber cuz modifying mprf
-
-      asm volatile (
-        ".insn r 0x0B, 0x0, 0x00, x6, %0, x0" // moving something in gprf to mprf[6]
-        :
-        : "r"(b1_addr)
-    ); // no clobber cuz modifying mprf
-
-    asm volatile (
-      ".insn r 0x0B, 0x0, 0x00, x7, %0, x0" // moving something in gprf to mprf[7]
-      :
-      : "r"(b2_addr)
-  ); // no clobber cuz modifying mprf
-
-  asm volatile (
-    ".insn r 0x0B, 0x0, 0x00, x8, %0, x0" // moving something in gprf to mprf[8]
-    :
-    : "r"(b3_addr)
-); // no clobber cuz modifying mprf
-
-
-        asm volatile ( // sending b[0] (from core1 MPRF[1]) to core 0 MPRF[5] (addr info in core1 MPRF[5])
- 		".insn r 0x2B, 0b001, 0x00, %0, x1, x5"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[1] (from core1 MPRF[2]) to core 0 MPRF[6] (addr info in core1 MPRF[6])
- 		".insn r 0x2B, 0b001, 0x00, %0, x2, x6"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[2] (from core1 MPRF[3]) to core 0 MPRF[7] (addr info in core1 MPRF[7])
- 		".insn r 0x2B, 0b001, 0x00, %0, x3, x7"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[3] (from core1 MPRF[4]) to core 0 MPRF[8] (addr info in core1 MPRF[8])
- 		".insn r 0x2B, 0b001, 0x00, %0, x4, x8"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
+  m = (M/NUMCORES) * NUMCORES + test4;
+  if (m < M) {
+  int baddr = NUMCORES-1;
+  baddr = (baddr << 5);
+  baddr = baddr + m + 1;
+  int edges = A_indptr[m+1] - A_indptr[m];
+    for(n=0; n < edges; n++){
+        b[M/NUMCORES] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
+    }
     
 
-       
-     
-    } else if (test4 == 1) {
+    MOVE_GPRF_TO_MPRF(x15, b[M/NUMCORES]); 
 
-        int firstrow = M/4 * test4;
-        int lastrow = (M/4 * (test4+1));
-        int m;
-        int b[M/4] = {0};
-        int n;
-        for (m=firstrow; m<lastrow; m++) {
-            int edges = A_indptr[m+1] - A_indptr[m];
-            for(n=0; n < edges; n++){
-                b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];
-            }
+     int edges = s_index[m+1] - s_index[m];
+                for(n=0; n < edges; n++){
+                   int core_dest = invcol_index[s_index[m]+n];
+                   if (core_dest != test4) {
+                   core_dest = core_dest << 5;
+                   core_dest = core_dest + m + 1; // technically need to do % stuff, e.g. b[16] shoul dbe sent to x1  
+
+                MOVE_GPRF_TO_MPRF(x30, core_dest); 
+                SEND_MPRF(x15, x30);
+                   } 
+                }
+  }
+
+} /*else {
+    for (m=firstrow; m<lastrow; m++) {
+        int edges = A_indptr[m+1] - A_indptr[m];
+        for(n=0; n < edges; n++){
+            b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];       
         }
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
-            :
-            : "r"(b[0])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
-            :
-            : "r"(b[1])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
-            :
-            : "r"(b[2])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
-            :
-            : "r"(b[3])
-        ); // no clobber cuz modifying mprf
-
-        int b0_addr= 0b0001100101; // next try having a base addr and adding 1 each time
-        int b1_addr= 0b0001100110;
-        int b2_addr= 0b0001100111;
-        int b3_addr= 0b0001101000;
-
-        asm volatile (
-          ".insn r 0x0B, 0x0, 0x00, x5, %0, x0" // moving something in gprf to mprf[5]
-          :
-          : "r"(b0_addr)
-      ); // no clobber cuz modifying mprf
-
-      asm volatile (
-        ".insn r 0x0B, 0x0, 0x00, x6, %0, x0" // moving something in gprf to mprf[6]
-        :
-        : "r"(b1_addr)
-    ); // no clobber cuz modifying mprf
-
-    asm volatile (
-      ".insn r 0x0B, 0x0, 0x00, x7, %0, x0" // moving something in gprf to mprf[7]
-      :
-      : "r"(b2_addr)
-  ); // no clobber cuz modifying mprf
-
-  asm volatile (
-    ".insn r 0x0B, 0x0, 0x00, x8, %0, x0" // moving something in gprf to mprf[8]
-    :
-    : "r"(b3_addr)
-); // no clobber cuz modifying mprf
-
-
-        asm volatile ( // sending b[0] (from core1 MPRF[1]) to core 0 MPRF[5] (addr info in core1 MPRF[5])
- 		".insn r 0x2B, 0b001, 0x00, %0, x1, x5"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[1] (from core1 MPRF[2]) to core 0 MPRF[6] (addr info in core1 MPRF[6])
- 		".insn r 0x2B, 0b001, 0x00, %0, x2, x6"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[2] (from core1 MPRF[3]) to core 0 MPRF[7] (addr info in core1 MPRF[7])
- 		".insn r 0x2B, 0b001, 0x00, %0, x3, x7"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[3] (from core1 MPRF[4]) to core 0 MPRF[8] (addr info in core1 MPRF[8])
- 		".insn r 0x2B, 0b001, 0x00, %0, x4, x8"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-        
-
-    } else if (test4 == 2) {
-
-        int firstrow = M/4 * test4;
-        int lastrow = (M/4 * (test4+1));
-        int m;
-        int b[M/4] = {0};
-        int n;
-        for (m=firstrow; m<lastrow; m++) {
-            int edges = A_indptr[m+1] - A_indptr[m];
-            for(n=0; n < edges; n++){
-                b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];
+    
+        int baddr = NUMCORES-1;
+            baddr = (baddr << 5);
+            baddr = baddr + m + 1;
+            if (test4 != NUMCORES - 1) {
+                switch (m-firstrow+1) {
+                    case 1: MOVE_GPRF_TO_MPRF(x1, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x16, baddr); SEND_MPRF(x1, x16); break;
+                    case 2: MOVE_GPRF_TO_MPRF(x2, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x17, baddr); SEND_MPRF(x2, x17); break;
+                    case 3: MOVE_GPRF_TO_MPRF(x3, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x18, baddr); SEND_MPRF(x3, x18); break;
+                    case 4: MOVE_GPRF_TO_MPRF(x4, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x19, baddr); SEND_MPRF(x4, x19); break;
+                    case 5: MOVE_GPRF_TO_MPRF(x5, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x20, baddr); SEND_MPRF(x5, x20); break;
+                    case 6: MOVE_GPRF_TO_MPRF(x6, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x21, baddr); SEND_MPRF(x6, x21); break;
+                    case 7: MOVE_GPRF_TO_MPRF(x7, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x22, baddr); SEND_MPRF(x7, x22); break;
+                    case 8: MOVE_GPRF_TO_MPRF(x8, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x23, baddr); SEND_MPRF(x8, x23); break;
+                    case 9: MOVE_GPRF_TO_MPRF(x9, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x24, baddr); SEND_MPRF(x9, x24); break;
+                    case 10: MOVE_GPRF_TO_MPRF(x10, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x25, baddr); SEND_MPRF(x10, x25); break;
+                    case 11: MOVE_GPRF_TO_MPRF(x11, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x26, baddr); SEND_MPRF(x11, x26); break;
+                    case 12: MOVE_GPRF_TO_MPRF(x12, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x27, baddr); SEND_MPRF(x12, x27); break;
+                    case 13: MOVE_GPRF_TO_MPRF(x13, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x28, baddr); SEND_MPRF(x13, x28); break;
+                    case 14: MOVE_GPRF_TO_MPRF(x14, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x29, baddr); SEND_MPRF(x14, x29); break;
+                    case 15: MOVE_GPRF_TO_MPRF(x15, b[m-firstrow]); MOVE_GPRF_TO_MPRF(x30, baddr); SEND_MPRF(x15, x30); break;
+                }
+            } else {
+                switch (m-firstrow+1) {
+                    case 1: MOVE_GPRF_TO_MPRF(x31, b[m-firstrow]); break;
+                    case 2: MOVE_GPRF_TO_MPRF(x30, b[m-firstrow]); break;
+                    case 3: MOVE_GPRF_TO_MPRF(x29, b[m-firstrow]); break;
+                    case 4: MOVE_GPRF_TO_MPRF(x28, b[m-firstrow]); break;
+                    case 5: MOVE_GPRF_TO_MPRF(x27, b[m-firstrow]); break;
+                    case 6: MOVE_GPRF_TO_MPRF(x26, b[m-firstrow]); break;
+                    case 7: MOVE_GPRF_TO_MPRF(x25, b[m-firstrow]); break;
+                    case 8: MOVE_GPRF_TO_MPRF(x24, b[m-firstrow]); break;
+                    case 9: MOVE_GPRF_TO_MPRF(x23, b[m-firstrow]); break;
+                    case 10: MOVE_GPRF_TO_MPRF(x22, b[m-firstrow]); break;
+                    case 11: MOVE_GPRF_TO_MPRF(x21, b[m-firstrow]); break;
+                    case 12: MOVE_GPRF_TO_MPRF(x20, b[m-firstrow]); break;
+                    case 13: MOVE_GPRF_TO_MPRF(x19, b[m-firstrow]); break;
+                    case 14: MOVE_GPRF_TO_MPRF(x18, b[m-firstrow]); break;
+                    case 15: MOVE_GPRF_TO_MPRF(x17, b[m-firstrow]); break;
+                }
+    
             }
-        }
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x1, %0, x0" // moving something in gprf to mprf[1]
-            :
-            : "r"(b[0])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x2, %0, x0" // moving something in gprf to mprf[2]
-            :
-            : "r"(b[1])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x3, %0, x0" // moving something in gprf to mprf[3]
-            :
-            : "r"(b[2])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x4, %0, x0" // moving something in gprf to mprf[4]
-            :
-            : "r"(b[3])
-        ); // no clobber cuz modifying mprf
-
-        int b0_addr= 0b0001101001; // next try having a base addr and adding 1 each time
-        int b1_addr= 0b0001101010;
-        int b2_addr= 0b0001101011;
-        int b3_addr= 0b0001101100;
-
-        asm volatile (
-          ".insn r 0x0B, 0x0, 0x00, x5, %0, x0" // moving something in gprf to mprf[5]
-          :
-          : "r"(b0_addr)
-      ); // no clobber cuz modifying mprf
-
-      asm volatile (
-        ".insn r 0x0B, 0x0, 0x00, x6, %0, x0" // moving something in gprf to mprf[6]
-        :
-        : "r"(b1_addr)
-    ); // no clobber cuz modifying mprf
-
-    asm volatile (
-      ".insn r 0x0B, 0x0, 0x00, x7, %0, x0" // moving something in gprf to mprf[7]
-      :
-      : "r"(b2_addr)
-  ); // no clobber cuz modifying mprf
-
-  asm volatile (
-    ".insn r 0x0B, 0x0, 0x00, x8, %0, x0" // moving something in gprf to mprf[8]
-    :
-    : "r"(b3_addr)
-); // no clobber cuz modifying mprf
-
-
-        asm volatile ( // sending b[0] (from core1 MPRF[1]) to core 0 MPRF[5] (addr info in core1 MPRF[5])
- 		".insn r 0x2B, 0b001, 0x00, %0, x1, x5"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[1] (from core1 MPRF[2]) to core 0 MPRF[6] (addr info in core1 MPRF[6])
- 		".insn r 0x2B, 0b001, 0x00, %0, x2, x6"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[2] (from core1 MPRF[3]) to core 0 MPRF[7] (addr info in core1 MPRF[7])
- 		".insn r 0x2B, 0b001, 0x00, %0, x3, x7"
-  		:"=r"(test3)
-		:
-		 
-  		);
-
-      asm volatile ( // sending b[3] (from core1 MPRF[4]) to core 0 MPRF[8] (addr info in core1 MPRF[8])
- 		".insn r 0x2B, 0b001, 0x00, %0, x4, x8"
-  		:"=r"(test3)
-		:
-		 
-  		);
-     
-
-    } else if (test4 == 3) {
-
-        int firstrow = M/4 * test4;
-        int lastrow = (M/4 * (test4+1));
-        int m;
-        int b[M/4] = {0};
-        int n;
-        for (m=firstrow; m<lastrow; m++) {
-            int edges = A_indptr[m+1] - A_indptr[m];
-            for(n=0; n < edges; n++){
-                b[m-firstrow] += A_data[A_indptr[m] + n] * x[A_indices[A_indptr[m] + n]];
-            }
-        }
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x13, %0, x0" // moving something in gprf to mprf[1]
-            :
-            : "r"(b[0])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x14, %0, x0" // moving something in gprf to mprf[2]
-            :
-            : "r"(b[1])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x15, %0, x0" // moving something in gprf to mprf[3]
-            :
-            : "r"(b[2])
-        ); // no clobber cuz modifying mprf
-
-        asm volatile (
-            ".insn r 0x0B, 0x0, 0x00, x16, %0, x0" // moving something in gprf to mprf[4]
-            :
-            : "r"(b[3])
-        ); // no clobber cuz modifying mprf
-
+                
       }
+}
+      */
 
-    //testing
-    asm volatile ("csrr %0, mhartid" : "=r"(test4));
 
-    if (test4 == 3) {
-      int done = 0;
-      int done1 = 0;
-      int done3 = 0;
-      int done4 = 0;
-      
-      while (done == 0 && done1 == 0 && done4 == 0 && done3 == 0) {
-        asm volatile (
-          ".insn r 0x0B, 0b001, 0x00, %0, x12, x0" // gprf is written the value of mprf[16]
-          :"=r"(done)
-          : 
-          : // double check how to clobber, if its even necessary
-      );
-      asm volatile (
-        ".insn r 0x0B, 0b001, 0x00, %0, x11, x0" // gprf is written the value of mprf[16]
-        :"=r"(done1)
-        : 
-        : // double check how to clobber, if its even necessary
-    );
-    asm volatile (
-      ".insn r 0x0B, 0b001, 0x00, %0, x10, x0" // gprf is written the value of mprf[16]
-      :"=r"(done3)
-      : 
-      : // double check how to clobber, if its even necessary
-  );
-  asm volatile (
-    ".insn r 0x0B, 0b001, 0x00, %0, x9, x0" // gprf is written the value of mprf[16]
-    :"=r"(done4)
-    : 
-    : // double check how to clobber, if its even necessary
-);
-      }
-      
-      int outt[16] = {0};
-      asm volatile (
-        ".insn r 0x0B, 0b001, 0x00, %0, x1, x0" // writing to gprf
-        :"=r"(outt[0])
-        : 
-        : // double check how to clobber, if its even necessary
-    );
-    asm volatile (
-      ".insn r 0x0B, 0b001, 0x00, %0, x2, x0" // writing to gprf
-      :"=r"(outt[1])
-      : 
-      : // double check how to clobber, if its even necessary
-  );
-  asm volatile (
-    ".insn r 0x0B, 0b001, 0x00, %0, x3, x0" // writing to gprf
-    :"=r"(outt[2])
-    : 
-    : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x4, x0" // writing to gprf
-  :"=r"(outt[3])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x5, x0" // writing to gprf
-  :"=r"(outt[4])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x6, x0" // writing to gprf
-  :"=r"(outt[5])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x7, x0" // writing to gprf
-  :"=r"(outt[6])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x8, x0" // writing to gprf
-  :"=r"(outt[7])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x9, x0" // writing to gprf
-  :"=r"(outt[8])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x10, x0" // writing to gprf
-  :"=r"(outt[9])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x11, x0" // writing to gprf
-  :"=r"(outt[10])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x12, x0" // writing to gprf
-  :"=r"(outt[11])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x13, x0" // writing to gprf
-  :"=r"(outt[12])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x14, x0" // writing to gprf
-  :"=r"(outt[13])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x15, x0" // writing to gprf
-  :"=r"(outt[14])
-  : 
-  : // double check how to clobber, if its even necessary
-);
-asm volatile (
-  ".insn r 0x0B, 0b001, 0x00, %0, x16, x0" // writing to gprf
-  :"=r"(outt[15])
-  : 
-  : // double check how to clobber, if its even necessary
-);
 
-char testchar[32];
-   snprintf(testchar, sizeof(testchar), "%d", outt[0]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[1]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[2]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[3]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[4]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[5]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[6]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[7]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[8]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[9]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[10]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[11]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[12]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[13]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[14]);
-    puts(testchar);
-    putchar('\n');
-    snprintf(testchar, sizeof(testchar), "%d", outt[15]);
-    puts(testchar);
-    putchar('\n');
+
+
+
+
+  
+
+  if (test4 == NUMCORES - 1) {
+    int done = 0;
+    int done1 = 0;
+    int done2 = 0;
+    int done3 = 0;
+
+    while (done == 0 && done1 == 0 && done2 == 0 && done3 == 0) { // maybe better for sum of the 4 to be > 1
+        switch (M) {
+            case 4: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 5: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4);  break;
+            case 6: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4);  break;
+            case 7: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4);  break;
+            case 8: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4);  break;
+            case 9: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4);  break;
+            case 10: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 11: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 12: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 13: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 14: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 15: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 16: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 17: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 18: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 19: MOVE_MPRF_TO_GPRF(done, x1); MOVE_MPRF_TO_GPRF(done1, x2); MOVE_MPRF_TO_GPRF(done2, x3); MOVE_MPRF_TO_GPRF(done3, x4); break;
+            case 20: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 21: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 22: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 23: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 24: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 25: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 26: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 27: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 28: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 29: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 30: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+            case 31: MOVE_MPRF_TO_GPRF(done, x15); MOVE_MPRF_TO_GPRF(done1, x14); MOVE_MPRF_TO_GPRF(done2, x13); MOVE_MPRF_TO_GPRF(done3, x12); break;
+
+        }
+
     }
+    int outt[32] = {0};
+    int i = 0;
+    for ( i = 0; i < (M/NUMCORES * (NUMCORES - 1)); i++) {
+        switch (i+1) {
+            case 1: MOVE_MPRF_TO_GPRF(outt[i], x1); break;
+            case 2: MOVE_MPRF_TO_GPRF(outt[i], x2); break;
+            case 3: MOVE_MPRF_TO_GPRF(outt[i], x3); break;
+            case 4: MOVE_MPRF_TO_GPRF(outt[i], x4); break;
+            case 5: MOVE_MPRF_TO_GPRF(outt[i], x5); break;
+            case 6: MOVE_MPRF_TO_GPRF(outt[i], x6); break;
+            case 7: MOVE_MPRF_TO_GPRF(outt[i], x7); break;
+            case 8: MOVE_MPRF_TO_GPRF(outt[i], x8); break;
+            case 9: MOVE_MPRF_TO_GPRF(outt[i], x9); break;
+            case 10: MOVE_MPRF_TO_GPRF(outt[i], x10); break;
+            case 11: MOVE_MPRF_TO_GPRF(outt[i], x11); break;
+            case 12: MOVE_MPRF_TO_GPRF(outt[i], x12); break;
+            case 13: MOVE_MPRF_TO_GPRF(outt[i], x13); break;
+            case 14: MOVE_MPRF_TO_GPRF(outt[i], x14); break;
+            case 15: MOVE_MPRF_TO_GPRF(outt[i], x15); break;
+            case 16: MOVE_MPRF_TO_GPRF(outt[i], x16); break;
+            case 17: MOVE_MPRF_TO_GPRF(outt[i], x17); break;
+            case 18: MOVE_MPRF_TO_GPRF(outt[i], x18); break;
+            case 19: MOVE_MPRF_TO_GPRF(outt[i], x19); break;
+            case 20: MOVE_MPRF_TO_GPRF(outt[i], x20); break;
+            case 21: MOVE_MPRF_TO_GPRF(outt[i], x21); break;
+            case 22: MOVE_MPRF_TO_GPRF(outt[i], x22); break;
+            case 23: MOVE_MPRF_TO_GPRF(outt[i], x23); break;
+            case 24: MOVE_MPRF_TO_GPRF(outt[i], x24); break;
+            case 25: MOVE_MPRF_TO_GPRF(outt[i], x25); break;
+            case 26: MOVE_MPRF_TO_GPRF(outt[i], x26); break;
+            case 27: MOVE_MPRF_TO_GPRF(outt[i], x27); break;
+            case 28: MOVE_MPRF_TO_GPRF(outt[i], x28); break;
+            case 29: MOVE_MPRF_TO_GPRF(outt[i], x29); break;
+            case 30: MOVE_MPRF_TO_GPRF(outt[i], x30); break;
+            case 31: MOVE_MPRF_TO_GPRF(outt[i], x31); break;
+        }
+
+    }
+
+    for (i = (M/NUMCORES * (NUMCORES - 1)); i < M/NUMCORES * NUMCORES; i++) {
+        switch (i+1 - (M/NUMCORES * (NUMCORES-1))) {
+            case 1: MOVE_MPRF_TO_GPRF(outt[i], x31); break;
+            case 2: MOVE_MPRF_TO_GPRF(outt[i], x30); break;
+            case 3: MOVE_MPRF_TO_GPRF(outt[i], x29); break;
+            case 4: MOVE_MPRF_TO_GPRF(outt[i], x28); break;
+            case 5: MOVE_MPRF_TO_GPRF(outt[i], x27); break;
+            case 6: MOVE_MPRF_TO_GPRF(outt[i], x26); break;
+            case 7: MOVE_MPRF_TO_GPRF(outt[i], x25); break;
+            case 8: MOVE_MPRF_TO_GPRF(outt[i], x24); break;
+            case 9: MOVE_MPRF_TO_GPRF(outt[i], x23); break;
+            case 10: MOVE_MPRF_TO_GPRF(outt[i], x22); break;
+            case 11: MOVE_MPRF_TO_GPRF(outt[i], x21); break;
+            case 12: MOVE_MPRF_TO_GPRF(outt[i], x20); break;
+        }
+
+    }
+
+    for (i = (M/NUMCORES * (NUMCORES)); i < M; i++) {
+        switch (i+1) {
+            case 1: MOVE_MPRF_TO_GPRF(outt[i], x1); break;
+            case 2: MOVE_MPRF_TO_GPRF(outt[i], x2); break;
+            case 3: MOVE_MPRF_TO_GPRF(outt[i], x3); break;
+            case 4: MOVE_MPRF_TO_GPRF(outt[i], x4); break;
+            case 5: MOVE_MPRF_TO_GPRF(outt[i], x5); break;
+            case 6: MOVE_MPRF_TO_GPRF(outt[i], x6); break;
+            case 7: MOVE_MPRF_TO_GPRF(outt[i], x7); break;
+            case 8: MOVE_MPRF_TO_GPRF(outt[i], x8); break;
+            case 9: MOVE_MPRF_TO_GPRF(outt[i], x9); break;
+            case 10: MOVE_MPRF_TO_GPRF(outt[i], x10); break;
+            case 11: MOVE_MPRF_TO_GPRF(outt[i], x11); break;
+            case 12: MOVE_MPRF_TO_GPRF(outt[i], x12); break;
+            case 13: MOVE_MPRF_TO_GPRF(outt[i], x13); break;
+            case 14: MOVE_MPRF_TO_GPRF(outt[i], x14); break;
+            case 15: MOVE_MPRF_TO_GPRF(outt[i], x15); break;
+            case 16: MOVE_MPRF_TO_GPRF(outt[i], x16); break;
+            case 17: MOVE_MPRF_TO_GPRF(outt[i], x17); break;
+            case 18: MOVE_MPRF_TO_GPRF(outt[i], x18); break;
+            case 19: MOVE_MPRF_TO_GPRF(outt[i], x19); break;
+            case 20: MOVE_MPRF_TO_GPRF(outt[i], x20); break;
+            case 21: MOVE_MPRF_TO_GPRF(outt[i], x21); break;
+            case 22: MOVE_MPRF_TO_GPRF(outt[i], x22); break;
+            case 23: MOVE_MPRF_TO_GPRF(outt[i], x23); break;
+            case 24: MOVE_MPRF_TO_GPRF(outt[i], x24); break;
+            case 25: MOVE_MPRF_TO_GPRF(outt[i], x25); break;
+            case 26: MOVE_MPRF_TO_GPRF(outt[i], x26); break;
+            case 27: MOVE_MPRF_TO_GPRF(outt[i], x27); break;
+            case 28: MOVE_MPRF_TO_GPRF(outt[i], x28); break;
+            case 29: MOVE_MPRF_TO_GPRF(outt[i], x29); break;
+            case 30: MOVE_MPRF_TO_GPRF(outt[i], x30); break;
+            case 31: MOVE_MPRF_TO_GPRF(outt[i], x31); break;
+        }
+
+    }
+
+    for (i = 0; i < M; i++) {
+        char testchar[32];
+        snprintf(testchar, sizeof(testchar), "%d", outt[i]);
+        puts(testchar);
+        putchar('\n');
+
+    }
+
+  }
 
     int count = 4;
 

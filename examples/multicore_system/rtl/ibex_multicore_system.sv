@@ -30,6 +30,7 @@
  * simulator_ctrl module.
  */
 
+`define SIM
 module ibex_multicore_system (
   input IO_CLK,
   input IO_RST_N
@@ -53,7 +54,7 @@ module ibex_multicore_system (
   parameter bit                 ICacheECC                = 1'b0;
   parameter bit                 BranchPredictor          = 1'b0;
   parameter                     SRAMInitFile             = "";
-  parameter int unsigned        CPUCount                 = 4;
+  parameter int unsigned        CPUCount                 = 32;
 
   logic clk_sys = 1'b0, rst_sys_n;
 
@@ -87,9 +88,9 @@ module ibex_multicore_system (
   logic valid_o [NrHosts];
   logic [31:0] data_i [NrHosts];
   logic [31:0] data_o [NrHosts];
-  logic [4:0] addr_i [NrHosts];
-  logic [4:0] addr_o [NrHosts];
-  logic [4:0] core_o [NrHosts];
+  logic [15:0] addr_i [NrHosts];
+  logic [15:0] addr_o [NrHosts];
+  logic [15:0] core_o [NrHosts];
   logic [1:0] len_i [NrHosts];
   logic [1:0] len_o [NrHosts];
   logic [31:0] msg1_data [NrHosts];
@@ -102,8 +103,8 @@ module ibex_multicore_system (
   logic noc_gnt_i [NrHosts];
   logic use_mprf_o [NrHosts];
 
-  logic [37:0] data_full_i [NrHosts];
-  logic [37:0] data_full_o [NrHosts];
+  logic [48:0] data_full_i [NrHosts];
+  logic [48:0] data_full_o [NrHosts];
 
 /*
   assign {addr_i, data_i} = data_full_i; // m
@@ -283,36 +284,44 @@ endgenerate
 */
   localparam NUM_CORES = NrHosts;
 
-noc_if #(.VC_W(1), .A_W($clog2(NUM_CORES)+1), .D_W(38))
+
+
+
+  ///////////////////////////////////////// CREDIT BEGIN
+
+  
+
+
+noc_if #(.VC_W(1), .A_W(16), .D_W(49))
        leaf_rx_noc_if [NUM_CORES-1:0] ( .clk(clk_sys),
        .rst(~rst_sys_n));   // bundled clock+reset
 
-noc_if #(.VC_W(1), .A_W($clog2(NUM_CORES)+1), .D_W(38))
+noc_if #(.VC_W(1), .A_W(16), .D_W(49))
        leaf_tx_noc_if [NUM_CORES-1:0] ( .clk(clk_sys),
        .rst(~rst_sys_n));   // bundled clock+reset
 
-noc_if #(.VC_W(1), .A_W($clog2(NUM_CORES)+1), .D_W(38))
+noc_if #(.VC_W(1), .A_W(16), .D_W(49))
        root_rx_noc_if ( .clk(clk_sys),
        .rst(~rst_sys_n));   // bundled clock+reset
 
-noc_if #(.VC_W(1), .A_W($clog2(NUM_CORES)+1), .D_W(38))
+noc_if #(.VC_W(1), .A_W(16), .D_W(49))
        root_tx_noc_if ( .clk(clk_sys),
        .rst(~rst_sys_n));   // bundled clock+reset
 
 for (genvar i = 0; i < NUM_CORES; ++i) begin : g_cores
-    assign leaf_rx_noc_if[i].packet.payload.data = data_full_o[i][37:0];
+    assign leaf_rx_noc_if[i].packet.payload.data = data_full_o[i][48:0];
     assign leaf_rx_noc_if[i].packet.payload.last = 1'b0;
     assign leaf_rx_noc_if[i].vc_target = noc_req_o[i];
     assign noc_gnt_i[i] = leaf_rx_noc_if[i].vc_credit_gnt; 
     assign leaf_tx_noc_if[i].vc_credit_gnt = ~use_mprf_o[i]; // maybe????
 
-    assign data_full_i[i][37:0] = leaf_tx_noc_if[i].packet.payload.data;
+    assign data_full_i[i][48:0] = leaf_tx_noc_if[i].packet.payload.data;
+    
 
-    /* verilator lint_off WIDTHTRUNC */
     assign leaf_rx_noc_if[i].packet.routeinfo.addr = core_o[i];
 
-    /* verilator lint_on WIDTHTRUNC */
 end
+
 
     assign root_rx_noc_if.packet.payload.data = 'b0;
     assign root_rx_noc_if.packet.payload.last = 1'b0;
@@ -325,7 +334,8 @@ end
 
   topology_t_binary_tree # (
     .N(NrHosts),
-    .D_W(38),
+    .D_W(49),
+    .A_W(16),
     .VC_W(1)
   ) u_msg_noc (
     .clk(clk_sys),
@@ -335,6 +345,96 @@ end
     .root_rx(root_rx_noc_if),
     .root_tx(root_tx_noc_if)
   );
+  
+  
+////////////////////////////////////////////////// CREDIT END
+
+
+
+////////////////////////////////////////////// DEFLECTION BEGIN
+/*
+  logic [65:0] peo [NrHosts-1:0];
+  logic [65:0] pei [NrHosts-1:0];
+  for (genvar i = 0; i < NUM_CORES; ++i) begin : g_cores
+    assign noc_gnt_i[i] = noc_req_o[i];
+    assign data_full_i[i] = {pei[i][65], pei[i][47:0]};
+    assign peo[i][63:48] = core_o[i];
+    assign peo[i][64] = use_mprf_o[i];
+    //assign peo[i][38] = 1'b1;
+    assign peo[i][65] = data_full_o[i][48];
+    assign peo[i][47:0] = data_full_o[i][47:0];
+    //assign peo[i] = {data_full_i[i][37], 1'b0, data_full_i[i][36:0]};
+  end
+
+
+
+  bft #(
+    .N(NrHosts),
+    .D_W(48),
+    .A_W(16)
+
+  ) u_msg_noc ( 
+    .in('b0),
+    .out(),
+    .clk(clk_sys),
+    .rst(~rst_sys_n),
+    .ce('b1),
+    .done_all(),
+    .peo(peo),
+    .pei(pei),
+    .done_pe('b0)
+
+  );
+*/
+///////////////////////////////////////////// DEFLECTION END
+
+
+/////////////////////////// BACKPRESSURE BEGIN
+/*
+  logic [64:0] peo [NrHosts-1:0];
+  logic [64:0] pei [NrHosts-1:0];
+  logic peo_l [NrHosts-1:0];
+  logic peo_v [NrHosts-1:0]; 
+  logic peo_r [NrHosts-1:0]; 
+  logic pei_v [NrHosts-1:0]; 
+  logic pei_r [NrHosts-1:0];
+  for (genvar i = 0; i < NUM_CORES; ++i) begin : g_cores
+    assign noc_gnt_i[i] = noc_req_o[i] && peo_r[i];
+    assign data_full_i[i] = {pei_v[i], pei[i][47:0]};
+    assign peo[i][63:48] = core_o[i];
+    assign peo[i][64] = 1'b0;
+    //assign peo[i][43] = data_full_o[i][37];
+    assign peo_v[i] = data_full_o[i][48];
+    assign peo[i][47:0] = data_full_o[i][47:0];
+    assign peo_l[i] = 1'b0;
+    assign pei_r[i] = !use_mprf_o[i];
+  end
+
+
+  bft #(
+    .N(NrHosts),
+    .D_W(48),
+    .A_W(16)
+
+  ) u_msg_noc (
+    .clk(clk_sys),
+    .rst(~rst_sys_n),
+    .ce('b1),
+    .in('b0),
+    .out(),
+    .done_all(),
+    .peo(peo),
+    .peo_v(peo_v),
+    .peo_r(peo_r),
+    .peo_l(peo_l),
+    .pei(pei),
+    .pei_v(pei_v),
+    .pei_r(pei_r),
+    .pei_l()
+);
+*/
+
+////////////////////////////////////////// BACKPRESSURE END
   
   /*
   logic [4:0] addr_base_bus3 [NrHosts];
